@@ -1,31 +1,22 @@
-#!/usr/bin/env python3
 from matrix_client.api import MatrixRequestError
 from matrix_client.client import MatrixClient
 from requests.exceptions import ConnectionError, Timeout
 import argparse
+import configparser
+import importlib
 import logging
+import os
 import queue
 import re
-import os
 import sys
-import importlib
 import time
 import traceback
 import urllib.parse
 
 
 COMMAND_REGISTRY = {}
+COMMANDS = []
 HELP = []
-
-
-for fn in os.listdir('modules'):
-    if not fn.startswith('_') and fn.endswith('.py'):
-        mod = importlib.import_module('modules.{}'.format(fn[:-3]))
-        for cmd, func in mod.CMDS.items():
-            HELP.append('{}: {}'.format(cmd, func.__doc__))
-        COMMAND_REGISTRY.update(mod.CMDS)
-
-COMMANDS = COMMAND_REGISTRY.keys()
 
 
 def sigterm_handler(_signo, _stack_frame):
@@ -35,12 +26,12 @@ def sigterm_handler(_signo, _stack_frame):
 
 class Bot(object):
     """Handles everything that the bot does."""
-    def __init__(self):
+    def __init__(self, server, username, password, display_name):
         self.client = None
-        self.server = 'https://matrix.eigenbaukombinat.de'
-        self.username = 'horscht'
-        self.password = 'xxx'
-        self.display_name = 'horscht'
+        self.server = server
+        self.username = username
+        self.password = password
+        self.display_name = display_name
         self.event_queue = queue.Queue()
         self.invite_queue = queue.Queue()
 
@@ -61,12 +52,14 @@ class Bot(object):
         if command is not None:
             command(event, command, self, args)
 
-    def reply(self, event, message):
+    def reply(self, event, message, html=False):
         """Replies to the given event with the provided message."""
         room = self.get_room(event)
         logging.info("Reply: %s" % message)
-        import pdb; pdb.set_trace()
-        room.send_notice(message)
+        if html:
+            room.send_html(message)
+        else:
+            room.send_text(message)
 
     def is_name_in_message(self, message):
         """Returns whether the message contains the bot's name.
@@ -102,7 +95,7 @@ class Bot(object):
                 break
         if not command_found and message.startswith('!help'):
             self.reply(event, '\n'.join(HELP))
-        
+
         return command_found
 
 
@@ -113,7 +106,7 @@ class Bot(object):
         messages.
         """
         self.send_read_receipt(event)
-        
+
         # only care about text messages
         if event['type'] != 'm.room.message' or event['content']['msgtype'] != 'm.text':
             return
@@ -199,8 +192,12 @@ def main():
     argparser.add_argument("--debug",
                            help="Print out way more things.",
                            action="store_true")
+    argparser.add_argument(
+        "--dev",
+        help="Only load the given extension module.")
     args = vars(argparser.parse_args())
     debug = args['debug']
+    dev = args['dev']
 
     # suppress logs of libraries
     logging.getLogger("requests").setLevel(logging.WARNING)
@@ -211,9 +208,32 @@ def main():
                         format='%(asctime)s %(name)s '
                         '%(levelname)s %(message)s')
 
+    for fn in os.listdir('modules'):
+        if not fn.startswith('_') and fn.endswith('.py'):
+            mod_name = fn[:-3]
+            if dev and mod_name not in dev:
+                continue
+            mod = importlib.import_module('modules.{}'.format(mod_name))
+            logging.info('Loaded extension {}'.format(mod_name))
+            for cmd, func in mod.CMDS.items():
+                HELP.append('{}: {}'.format(cmd, func.__doc__))
+            COMMAND_REGISTRY.update(mod.CMDS)
+
+    COMMANDS.extend(list(COMMAND_REGISTRY.keys()))
+
+    config = configparser.ConfigParser()
+    if not os.path.exists('config.ini'):
+        print("config.ini does not exist, copy from config.ini.example and edit!")
+        sys.exit(0)
+    config.read('config.ini')
+    server = config['bot']['server']
+    username = config['bot']['username']
+    password = config['bot']['password']
+    display_name = config['bot']['display_name']
+
     while True:
         try:
-            bot = Bot()
+            bot = Bot(server, username, password, display_name)
             bot.login()
             bot.run()
         except (MatrixRequestError, ConnectionError):

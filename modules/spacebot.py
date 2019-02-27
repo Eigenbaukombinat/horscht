@@ -11,11 +11,11 @@ def get_status(event, message, bot, args):
     st = requests.get('{}?{}'.format(SPACESTATUS_URL, timestamp)).json()
 
     if st['state']['open']:
-        status = 'offen'
+        status = '<span style="color:green">offen</span>'
     else:
-        status = 'zu'
+        status = '<span style="color:red">zu</span>'
 
-    bot.reply(event, "Der Space ist {}".format(status))
+    bot.reply(event, "<h2>Der Space ist {}.</h2>".format(status), html=True)
 
 
 def set_status(event, message, bot, args):
@@ -25,7 +25,7 @@ def set_status(event, message, bot, args):
     if len(args):
         which = args[0]
     bot.reply(event, "Setze status auf %s. Nicht." % which)
- 
+
 
 CMDS = { '!status': get_status,
          '!setstatus': set_status, }
