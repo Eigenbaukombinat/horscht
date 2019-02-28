@@ -15,6 +15,7 @@ import urllib.parse
 
 
 COMMAND_REGISTRY = {}
+MESSAGES_REGISTRY = {}
 COMMANDS = []
 HELP = []
 
@@ -215,9 +216,14 @@ def main():
                 continue
             mod = importlib.import_module('modules.{}'.format(mod_name))
             logging.info('Loaded extension {}'.format(mod_name))
-            for cmd, func in mod.CMDS.items():
-                HELP.append('{}: {}'.format(cmd, func.__doc__))
-            COMMAND_REGISTRY.update(mod.CMDS)
+            if hasattr(mod, 'CMDS'):
+                for cmd, func in mod.CMDS.items():
+                    HELP.append('{}: {}'.format(cmd, func.__doc__))
+                COMMAND_REGISTRY.update(mod.CMDS)
+            if hasattr(mod, 'MSGS'):
+                for msg, func in mod.MSGS.items():
+                    HELP.append(func.__doc__)
+                MESSAGES_REGISTRY.update(mod.MSGS)
 
     COMMANDS.extend(list(COMMAND_REGISTRY.keys()))
 
@@ -230,17 +236,32 @@ def main():
     username = config['bot']['username']
     password = config['bot']['password']
     display_name = config['bot']['display_name']
+    mqtt_broker = config['bot']['mqtt_broker']
+
+    mqtt_client = mqtt.Client()
+    mqtt_client.connect(mqtt_broker)
+
+    def mqtt_received(client, data, message):
+        handler = MESSAGES_REGISTRY.get(message.topic)
+        if handler is None:
+            return
+        handler(message, data, client, bot)
+
 
     while True:
         try:
             bot = Bot(server, username, password, display_name)
             bot.login()
+            mqtt_client.on_message = mqtt_received
+            mqtt_client.loop_start()
             bot.run()
         except (MatrixRequestError, ConnectionError):
             traceback.print_exc()
             logging.warning("disconnected. Waiting a minute to see if"
                             " the problem resolves itself...")
             time.sleep(60)
+        finally:
+            mqtt_client.loop_stop()
 
 
 if __name__ == '__main__':

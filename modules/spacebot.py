@@ -11,9 +11,9 @@ def get_status(event, message, bot, args):
     st = requests.get('{}?{}'.format(SPACESTATUS_URL, timestamp)).json()
 
     if st['state']['open']:
-        status = '<span style="color:green">offen</span>'
+        status = 'offen'
     else:
-        status = '<span style="color:red">zu</span>'
+        status = 'zu'
 
     bot.reply(event, "<h2>Der Space ist {}.</h2>".format(status), html=True)
 
@@ -27,5 +27,13 @@ def set_status(event, message, bot, args):
     bot.reply(event, "Setze status auf %s. Nicht." % which)
 
 
+def announce_status(message, data, client, bot):
+    for room in self.client.rooms:
+        status = 'offen' if message.payload == 'true' else 'zu'
+        room.send_html('<h2>Der Space ist jetzt {}.</h2>'.format(status))
+
+
 CMDS = { '!status': get_status,
          '!setstatus': set_status, }
+
+MSGS = { 'space/status/open': announce_status }
