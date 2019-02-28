@@ -28,9 +28,12 @@ def set_status(event, message, bot, args):
 
 
 def announce_status(message, data, client, bot):
-    for room in self.client.rooms:
-        status = 'offen' if message.payload == 'true' else 'zu'
-        room.send_html('<h2>Der Space ist jetzt {}.</h2>'.format(status))
+    """Schreibt den spacestatus in alle Räume, wenn sich dieser ändert."""
+    payload = message.payload.decode('utf8')
+    status = 'offen' if payload == 'true' else 'zu'
+    msg = '<h2>Der Space ist jetzt {}.</h2>'.format(status)
+    for room_id in bot.client.rooms:
+        bot.client.rooms[room_id].send_html(msg)
 
 
 CMDS = { '!status': get_status,

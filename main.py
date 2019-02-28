@@ -6,6 +6,7 @@ import configparser
 import importlib
 import logging
 import os
+import paho.mqtt.client as mqtt
 import queue
 import re
 import sys
@@ -240,6 +241,8 @@ def main():
 
     mqtt_client = mqtt.Client()
     mqtt_client.connect(mqtt_broker)
+    for topic in MESSAGES_REGISTRY.keys():
+        mqtt_client.subscribe(topic)
 
     def mqtt_received(client, data, message):
         handler = MESSAGES_REGISTRY.get(message.topic)
