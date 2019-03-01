@@ -18,7 +18,21 @@ import urllib.parse
 COMMAND_REGISTRY = {}
 MESSAGES_REGISTRY = {}
 COMMANDS = []
-HELP = []
+HELP = '''{} versteht die folgenden Befehle:
+<ul>
+{}
+</ul>
+{} reagiert auch auf MQTT-Nachrichten:
+<ul>
+{}
+</ul>
+'''
+HELP_MSGS = []
+HELP_CMDS = []
+
+
+def format_help_entry(cmd, txt):
+    return '<li><b>{}</b> – {}</li>\n'.format(cmd, txt)
 
 
 def sigterm_handler(_signo, _stack_frame):
@@ -84,6 +98,21 @@ class Bot(object):
             else:
                 raise(e)
 
+    def get_help(self):
+        help_commands = []
+        for cmd, htxt in sorted(HELP_CMDS):
+            help_commands.append(format_help_entry(cmd, htxt))
+        help_messages = []
+        for msg, htxt in sorted(HELP_MSGS):
+            help_messages.append(format_help_entry(msg, htxt))
+
+        helptxt = HELP.format(
+                    self.display_name,
+                    '\n'.join(help_commands),
+                    self.display_name,
+                    '\n'.join(help_messages))
+        return helptxt
+
     def handle_message(self, event, message):
         command_found = False
         for command in COMMANDS:
@@ -96,10 +125,9 @@ class Bot(object):
                 self.handle_command(event, args[0], args[1:])
                 break
         if not command_found and message.startswith('!help'):
-            self.reply(event, '\n'.join(HELP))
+            self.reply(event, self.get_help(), html=True)
 
         return command_found
-
 
     def handle_event(self, event):
         """Handles the given event.
@@ -110,10 +138,11 @@ class Bot(object):
         self.send_read_receipt(event)
 
         # only care about text messages
-        if event['type'] != 'm.room.message' or event['content']['msgtype'] != 'm.text':
+        if event['type'] != 'm.room.message' or \
+                event['content']['msgtype'] != 'm.text':
             return
 
-         # dont care about messages by myself
+        # dont care about messages by myself
         if event['sender'] == self.client.user_id:
             return
 
@@ -122,7 +151,8 @@ class Bot(object):
         if not command_found and self.display_name in message:
             room = self.get_room(event)
             if self.is_name_in_message(message):
-                self.reply(event, "Don't mess with me, buddy. Try !help instead.")
+                self.reply(event, "Don't mess with me, buddy. "
+                                  "Try !help instead.")
 
     def set_display_name(self, display_name):
         """Sets the bot's display name on the server."""
@@ -137,7 +167,6 @@ class Bot(object):
         current_display_name = self.get_display_name()
         if current_display_name != self.display_name:
             self.set_display_name(self.display_name)
-
 
         # listen for invites, including initial sync invites
         self.client.add_invite_listener(
@@ -219,18 +248,18 @@ def main():
             logging.info('Loaded extension {}'.format(mod_name))
             if hasattr(mod, 'CMDS'):
                 for cmd, func in mod.CMDS.items():
-                    HELP.append('{}: {}'.format(cmd, func.__doc__))
+                    HELP_CMDS.append((cmd, func.__doc__))
                 COMMAND_REGISTRY.update(mod.CMDS)
             if hasattr(mod, 'MSGS'):
                 for msg, func in mod.MSGS.items():
-                    HELP.append(func.__doc__)
+                    HELP_MSGS.append((msg, func.__doc__))
                 MESSAGES_REGISTRY.update(mod.MSGS)
 
     COMMANDS.extend(list(COMMAND_REGISTRY.keys()))
 
     config = configparser.ConfigParser()
     if not os.path.exists('config.ini'):
-        print("config.ini does not exist, copy from config.ini.example and edit!")
+        print("config.ini does not exist, copy config.ini.example and edit!")
         sys.exit(0)
     config.read('config.ini')
     server = config['bot']['server']
@@ -240,9 +269,10 @@ def main():
     mqtt_broker = config['bot']['mqtt_broker']
 
     mqtt_client = mqtt.Client()
-    mqtt_client.connect(mqtt_broker)
-    for topic in MESSAGES_REGISTRY.keys():
-        mqtt_client.subscribe(topic)
+    if mqtt_broker:
+        mqtt_client.connect(mqtt_broker)
+        for topic in MESSAGES_REGISTRY.keys():
+            mqtt_client.subscribe(topic)
 
     def mqtt_received(client, data, message):
         handler = MESSAGES_REGISTRY.get(message.topic)
@@ -250,13 +280,13 @@ def main():
             return
         handler(message, data, client, bot)
 
-
     while True:
         try:
             bot = Bot(server, username, password, display_name)
             bot.login()
-            mqtt_client.on_message = mqtt_received
-            mqtt_client.loop_start()
+            if mqtt_broker:
+                mqtt_client.on_message = mqtt_received
+                mqtt_client.loop_start()
             bot.run()
         except (MatrixRequestError, ConnectionError):
             traceback.print_exc()
