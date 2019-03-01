@@ -15,7 +15,7 @@ cp config.ini.example config.ini
 
 ## Configuration and starting
 
-Then, edit config.ini to your needs and start the bot.
+Then, edit config.ini to your needs and start the bot. Please note that you can leave the mqtt_broker setting empty, to disable MQTT support.
 
 ```bash
 bin/python main.py
@@ -29,11 +29,14 @@ If you work on a specific extension module (see below), you can restrict to bot 
 bin/python main.py --dev mymodule
 ```
 
-## Extension
+## Writing extensions
 
-To extend a bot, simply drop a .py-File into the modules folder, which must contain the following:
+To extend a bot, simply drop a .py-File into the modules folder, which contains
+the code of your extension.
 
-**The function which is called when your command is spelled in a room the bot is in.**
+### React to commands
+
+If you want to react to spelled commands, you have to write a single function for every command. The docstring of the function will be displayed in the bots help text.
 
 It must accept exactly 4 arguments:
 
@@ -48,10 +51,34 @@ def my_function(event, message, bot, args):
 	bot.reply(event, "Heyja!")
 ```
 
-After the definition of the function, you have to register it together with the command.
+After the definition of the function, you have to register it in the CMDS dict  with the command as the key.
 
 ```python
-CMDS = { '!hello', my_function }
+CMDS = { '!hello': my_function }
 ```
 
+### React to MQTT messages
 
+Your bot can also react to MQTT messages. Make sure to set the address of the MQTT broker in your config.ini.
+
+For each topic you want to subscribe to, you have to define a function, which must
+accept these 4 arguments:
+
+* **message** The MQTT message. Among others, it has the "payload" and "topic" attributes.
+* **data** MQTT Userdata. Whatever.
+* **client** The MQTT Client object. You might want to publish some messages in your handler.
+* **bot** The Bot instance. In the example below it is used to send the received text into every room the bot is in.
+
+```python
+def announce_status(message, data, client, bot):
+	"""Help text."""
+	text = message.payload.decode('utf8')
+    for room_id in bot.client.rooms:
+        bot.client.rooms[room_id].send_notice(text)
+```
+
+You have to register your function, by mapping the topic in the MSGS dict to your function.
+
+```python
+MSGS = { 'example/topic': announce_status }
+```

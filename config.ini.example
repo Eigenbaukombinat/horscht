@@ -3,3 +3,4 @@ server = https://matrix.eigenbaukombinat.de
 username = horscht
 display_name = horscht
 password = xxx
+mqtt_broker = localhost
