@@ -15,7 +15,7 @@ def get_status(event, message, bot, args):
     else:
         status = 'zu'
 
-    bot.reply(event, "<h2>Der Space ist {}.</h2>".format(status), html=True)
+    bot.reply(event, "<b>Der Space ist {}.</b>".format(status), html=True)
 
 
 def set_status(event, message, bot, args):
@@ -28,7 +28,7 @@ def set_status(event, message, bot, args):
 
 
 def announce_status(message, data, client, bot):
-    """Schreibt den spacestatus in alle Räume, wenn sich dieser ändert."""
+    """Schreibt den spacestatus in alle Räume."""
     payload = message.payload.decode('utf8')
     status = 'offen' if payload == 'true' else 'zu'
     msg = '<h2>Der Space ist jetzt {}.</h2>'.format(status)
@@ -36,7 +36,7 @@ def announce_status(message, data, client, bot):
         bot.client.rooms[room_id].send_html(msg)
 
 
-CMDS = { '!status': get_status,
-         '!setstatus': set_status, }
+CMDS = {'!status': get_status,
+        '!setstatus': set_status, }
 
-MSGS = { 'space/status/open': announce_status }
+MSGS = {'space/status/open': announce_status, }
