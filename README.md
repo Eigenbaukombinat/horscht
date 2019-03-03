@@ -21,18 +21,16 @@ Then, edit config.ini to your needs and start the bot. Please note that you can 
 bin/python main.py
 ```
 
-## Development mode
+## Configure extensions
 
-If you work on a specific extension module (see below), you can restrict to bot to only react on the commands specified in that module. (This prevents the bot from answering multiple times if its running elsewhere.)
-
-```bash
-bin/python main.py --dev mymodule
-```
+You can configure the extensions your bot should load
+be defining sections in your config file with an importable module as section name. To use the shipped extension `spacebot` specify like `[modules.spacebot]`.
+You can also load extensions from other python packages like `[my.fancy.exension]`.
 
 ## Writing extensions
 
-To extend a bot, simply drop a .py-File into the modules folder, which contains
-the code of your extension.
+To extend a bot, either simply drop a .py-File into the modules folder, which contains
+the code of your extension, and add its name to config like `[modules.myextension]`. Or if you want to develop your exension into a separate python package, give its full module path.
 
 ### React to commands
 

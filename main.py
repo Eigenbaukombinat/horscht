@@ -131,9 +131,6 @@ class Bot(object):
 
     def handle_event(self, event):
         """Handles the given event.
-
-        Joins a room if invited, learns from messages, and possibly responds to
-        messages.
         """
         self.send_read_receipt(event)
 
@@ -223,12 +220,8 @@ def main():
     argparser.add_argument("--debug",
                            help="Print out way more things.",
                            action="store_true")
-    argparser.add_argument(
-        "--dev",
-        help="Only load the given extension module.")
     args = vars(argparser.parse_args())
     debug = args['debug']
-    dev = args['dev']
 
     # suppress logs of libraries
     logging.getLogger("requests").setLevel(logging.WARNING)
@@ -239,24 +232,7 @@ def main():
                         format='%(asctime)s %(name)s '
                         '%(levelname)s %(message)s')
 
-    for fn in os.listdir('modules'):
-        if not fn.startswith('_') and fn.endswith('.py'):
-            mod_name = fn[:-3]
-            if dev and mod_name not in dev:
-                continue
-            mod = importlib.import_module('modules.{}'.format(mod_name))
-            logging.info('Loaded extension {}'.format(mod_name))
-            if hasattr(mod, 'CMDS'):
-                for cmd, func in mod.CMDS.items():
-                    HELP_CMDS.append((cmd, func.__doc__))
-                COMMAND_REGISTRY.update(mod.CMDS)
-            if hasattr(mod, 'MSGS'):
-                for msg, func in mod.MSGS.items():
-                    HELP_MSGS.append((msg, func.__doc__))
-                MESSAGES_REGISTRY.update(mod.MSGS)
-
-    COMMANDS.extend(list(COMMAND_REGISTRY.keys()))
-
+    # read bot config
     config = configparser.ConfigParser()
     if not os.path.exists('config.ini'):
         print("config.ini does not exist, copy config.ini.example and edit!")
@@ -267,6 +243,30 @@ def main():
     password = config['bot']['password']
     display_name = config['bot']['display_name']
     mqtt_broker = config['bot']['mqtt_broker']
+
+    for module in config.sections():
+        if module == 'bot':
+            # ignore general section 
+            continue
+        try:
+            mod = importlib.import_module(module)
+        except ImportError:
+            logging.error(
+                'Module {} not found. Ignoring.'.format(module))
+            continue
+
+        logging.info('Loaded extension {}'.format(module))
+        if hasattr(mod, 'CMDS'):
+            for cmd, func in mod.CMDS.items():
+                HELP_CMDS.append((cmd, func.__doc__))
+            COMMAND_REGISTRY.update(mod.CMDS)
+        if hasattr(mod, 'MSGS'):
+            for msg, func in mod.MSGS.items():
+                HELP_MSGS.append((msg, func.__doc__))
+            MESSAGES_REGISTRY.update(mod.MSGS)
+
+    COMMANDS.extend(list(COMMAND_REGISTRY.keys()))
+
 
     mqtt_client = mqtt.Client()
     if mqtt_broker:

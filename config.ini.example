@@ -4,3 +4,6 @@ username = horscht
 display_name = horscht
 password = xxx
 mqtt_broker = localhost
+
+[modules.spacebot]
+[modules.helloworld]
