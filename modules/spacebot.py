@@ -31,9 +31,12 @@ def announce_status(message, data, client, bot):
     """Schreibt den spacestatus in alle Räume."""
     payload = message.payload.decode('utf8')
     status = 'offen' if payload == 'true' else 'zu'
-    msg = '<h2>Der Space ist jetzt {}.</h2>'.format(status)
+    msg = '<b>Der Space ist jetzt {}.</b>'.format(status)
     for room_id in bot.client.rooms:
-        bot.client.rooms[room_id].send_html(msg)
+        room = bot.client.rooms[room_id]
+        # dont't spam rooms where i'm currently alone.
+        if len(room._members) > 1:
+            bot.client.rooms[room_id].send_html(msg)
 
 
 CMDS = {'!status': get_status,
