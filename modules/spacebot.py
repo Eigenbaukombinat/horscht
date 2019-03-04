@@ -33,8 +33,11 @@ def announce_status(message, data, client, bot):
     status = 'offen' if payload == 'true' else 'zu'
     msg = '<b>Der Space ist jetzt {}.</b>'.format(status)
     for room in bot.client.rooms.values():
-        # dont't spam rooms where i'm currently alone.
-        if len(room._members) > 1:
+        # write to 1:1 chats with me
+        if len(room._members) == 2:
+            room.send_html(msg)
+        # XXX move to module configuration, allow multiple room names
+        if room.display_name == 'sozialraum':
             room.send_html(msg)
 
 
