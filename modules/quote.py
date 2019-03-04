@@ -1,5 +1,5 @@
 def quote(event, message, bot, args):
-    """Sendet den übergebenen Text als Zitat in einen Raum (!quote <zielraum> <text>)"""
+    """Sendet den übergebenen Text als Zitat in einen Raum (!quote [zielraum] [text])"""
     if len(args) < 2:
         bot.reply(event, 'Bitte den Raumnamen und einen Text angeben.')
         return
