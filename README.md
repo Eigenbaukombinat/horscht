@@ -27,6 +27,31 @@ You can configure the extensions your bot should load
 be defining sections in your config file with an importable module as section name. To use the shipped extension `spacebot` specify like `[modules.spacebot]`.
 You can also load extensions from other python packages like `[my.fancy.exension]`.
 
+In those sections there are 2 possible configuration options which lets to define which users
+and which rooms the commands from the module are allowed.
+
+### allowed_rooms
+
+Specify the rooms (by their canonical room address) the command is allowed in.
+
+```cfg
+[my.fancy.extension]
+allowed_rooms = #room1:fancyserver.com
+	#room2:fancyserver.com
+```
+
+### allowed_users
+
+To let specific users use a command (even in rooms the command is not allowed), set
+them like this.
+
+```cfg
+[my.fancy.extension]
+allowed_users = @user1:fancyserver.com
+	@user2:otherserver.com
+```
+
+
 ## Writing extensions
 
 To extend a bot, either simply drop a .py-File into the modules folder, which contains

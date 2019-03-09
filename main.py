@@ -17,8 +17,12 @@ import urllib.parse
 
 COMMAND_REGISTRY = {}
 MESSAGES_REGISTRY = {}
+
+ACL_ROOMS = {}
+ACL_USERS = {}
+
 COMMANDS = []
-HELP = '''{} versteht die folgenden Befehle:
+HELP = '''{} reagiert auf folgendes:
 <ul>
 {}
 </ul>
@@ -62,10 +66,39 @@ class Bot(object):
         """Returns the room the given event took place in."""
         return self.client.rooms[event['room_id']]
 
-    def handle_command(self, event, command, args):
+    def command_allowed(self, cmd, user, room):
+        # canonical alias not set always, maybe its a private conversation
+        # then we check against the room id.
+        room_address = room.canonical_alias or room.room_id
+        # check if the command is allowed in the room it was spelled
+        # if allowed_in_room is not set, the command is public
+        allowed_in_room = True
+        allowed_rooms = ACL_ROOMS.get(cmd)
+        if allowed_rooms is not None and room_address not in allowed_rooms:
+            allowed_in_room = False
+
+        # check if the sender is allowed to use the command
+        allowed_for_user = False
+        allowed_users = ACL_USERS.get(cmd)
+        if allowed_users is not None and user in allowed_users:
+            allowed_for_user = True
+
+        # allowed users can use the command everywhere!
+        if allowed_in_room or allowed_for_user:
+            return True
+        return False
+
+    def handle_command(self, event, cmd, args):
         """Handles the given command, possibly sending a reply to it."""
-        command = COMMAND_REGISTRY.get(command.lower())
-        if command is not None:
+        cmd = cmd.lower()
+        room = self.get_room(event)
+        command = COMMAND_REGISTRY.get(cmd)
+
+        # command not found
+        if command is None:
+            return
+
+        if self.command_allowed(cmd, event['sender'], room):
             command(event, command, self, args)
 
     def reply(self, event, message, html=False):
@@ -98,10 +131,13 @@ class Bot(object):
             else:
                 raise(e)
 
-    def get_help(self):
+    def get_help(self, event):
+        user = event['sender']
+        room = self.get_room(event)
         help_commands = []
         for cmd, htxt in sorted(HELP_CMDS):
-            help_commands.append(format_help_entry(cmd, htxt))
+            if self.command_allowed(cmd, event['sender'], room):
+                help_commands.append(format_help_entry(cmd, htxt))
         help_messages = []
         for msg, htxt in sorted(HELP_MSGS):
             help_messages.append(format_help_entry(msg, htxt))
@@ -125,7 +161,7 @@ class Bot(object):
                 self.handle_command(event, args[0], args[1:])
                 break
         if not command_found and message.startswith('!help'):
-            self.reply(event, self.get_help(), html=True)
+            self.reply(event, self.get_help(event), html=True)
 
         return command_found
 
@@ -260,6 +296,8 @@ def main():
             for cmd, func in mod.CMDS.items():
                 HELP_CMDS.append((cmd, func.__doc__))
             COMMAND_REGISTRY.update(mod.CMDS)
+            ACL_USERS[cmd] = config[module].get('allowed_users')
+            ACL_ROOMS[cmd] = config[module].get('allowed_rooms')
         if hasattr(mod, 'MSGS'):
             for msg, func in mod.MSGS.items():
                 HELP_MSGS.append((msg, func.__doc__))

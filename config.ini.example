@@ -5,5 +5,14 @@ display_name = horscht
 password = xxx
 mqtt_broker = localhost
 
-[modules.spacebot]
+[modules.quote]
+# explicitly allow the commands defined by this module to some users
+# overrides allowed rooms, commands are allowed everywhere 
+allowed_users = @nilo:matrix.eigenbaukombinat.de
+     @user2:matrix.eigenbaukombinat.de
+# private command, not allowed in any room (only by above users)
+allowed_rooms =
+
 [modules.helloworld]
+# allowed by all users in this room
+allowed_rooms = #testraum:matrix.eigenbaukombinat.de
