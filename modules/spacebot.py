@@ -32,7 +32,7 @@ def announce_status(message, data, client, bot):
     payload = message.payload.decode('utf8')
     status = 'offen' if payload == 'true' else 'zu'
     msg = '<b>Der Space ist jetzt {}.</b>'.format(status)
-    for room in bot.client.rooms.values():
+    for room in list(bot.client.rooms.values()):
         # write to 1:1 chats with me
         if len(room._members) == 2:
             room.send_html(msg)
