@@ -306,11 +306,6 @@ def main():
     COMMANDS.extend(list(COMMAND_REGISTRY.keys()))
 
 
-    mqtt_client = mqtt.Client()
-    if mqtt_broker:
-        mqtt_client.connect(mqtt_broker)
-        for topic in MESSAGES_REGISTRY.keys():
-            mqtt_client.subscribe(topic)
 
     def mqtt_received(client, data, message):
         handler = MESSAGES_REGISTRY.get(message.topic)
@@ -323,16 +318,23 @@ def main():
             bot = Bot(server, username, password, display_name)
             bot.login()
             if mqtt_broker:
+                mqtt_client = mqtt.Client()
+                mqtt_client.connect(mqtt_broker)
+                time.sleep(1)
+                for topic in MESSAGES_REGISTRY.keys():
+                    mqtt_client.subscribe(topic)
+                time.sleep(1)
                 mqtt_client.on_message = mqtt_received
                 mqtt_client.loop_start()
             bot.run()
         except (MatrixRequestError, ConnectionError):
+            if mqtt_broker:
+                mqtt_client.loop_stop()
+                mqtt_client.disconnect()
             traceback.print_exc()
             logging.warning("disconnected. Waiting a minute to see if"
                             " the problem resolves itself...")
             time.sleep(60)
-        finally:
-            mqtt_client.loop_stop()
 
 
 if __name__ == '__main__':
