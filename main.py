@@ -223,22 +223,20 @@ class Bot(object):
         logging.info("starting listener thread")
         self.client.start_listener_thread(exception_handler=exception_handler)
 
-        try:
-            while True:
-                time.sleep(0.25)
+        while True:
+            time.sleep(0.25)
 
-                # handle any queued events
-                while not self.event_queue.empty():
-                    event = self.event_queue.get_nowait()
-                    self.handle_event(event)
+            # handle any queued events
+            while not self.event_queue.empty():
+                event = self.event_queue.get_nowait()
+                self.handle_event(event)
 
-                while not self.invite_queue.empty():
-                    room_id, invite_state = self.invite_queue.get_nowait()
-                    self.handle_invite(room_id, invite_state)
+            while not self.invite_queue.empty():
+                room_id, invite_state = self.invite_queue.get_nowait()
+                self.handle_invite(room_id, invite_state)
 
-        finally:
-            logging.info("stopping listener thread")
-            self.client.stop_listener_thread()
+        logging.info("stopping listener thread")
+        self.client.stop_listener_thread()
 
     def send_read_receipt(self, event):
         """Sends a read receipt for the given event."""
@@ -314,27 +312,18 @@ def main():
         handler(message, data, client, bot)
 
     while True:
-        try:
-            bot = Bot(server, username, password, display_name)
-            bot.login()
-            if mqtt_broker:
-                mqtt_client = mqtt.Client()
-                mqtt_client.connect(mqtt_broker)
-                time.sleep(1)
-                for topic in MESSAGES_REGISTRY.keys():
-                    mqtt_client.subscribe(topic)
-                time.sleep(1)
-                mqtt_client.on_message = mqtt_received
-                mqtt_client.loop_start()
-            bot.run()
-        except (MatrixRequestError, ConnectionError):
-            if mqtt_broker:
-                mqtt_client.loop_stop()
-                mqtt_client.disconnect()
-            traceback.print_exc()
-            logging.warning("disconnected. Waiting a minute to see if"
-                            " the problem resolves itself...")
-            time.sleep(60)
+        bot = Bot(server, username, password, display_name)
+        bot.login()
+        if mqtt_broker:
+            mqtt_client = mqtt.Client()
+            mqtt_client.connect(mqtt_broker)
+            time.sleep(1)
+            for topic in MESSAGES_REGISTRY.keys():
+                mqtt_client.subscribe(topic)
+            time.sleep(1)
+            mqtt_client.on_message = mqtt_received
+            mqtt_client.loop_start()
+        bot.run()
 
 
 if __name__ == '__main__':
