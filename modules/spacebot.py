@@ -75,7 +75,7 @@ def announce_count_close(message, data, client, bot):
     """schreibt in einen raum wie oft es geklingelt hat"""
     payload = message.payload.decode('utf8')
     logging.info("space/status/klingel/count-CLOSE contained: {}".format(payload))
-    msg = '<b>Es hat {} mal geklingelt, während der Space offen war. :)</b>'.format(payload)
+    msg = '<b>Es hat {} mal geklingelt, während der Space offen war.</b>'.format(payload)
     for room in list(bot.client.rooms.values()):
         # XXX move to module configuration, allow multiple room names
         if room.display_name == 'spacemaster':
@@ -85,7 +85,17 @@ def announce_count_open(message, data, client, bot):
     """schreibt in einen raum wie oft es geklingelt hat"""
     payload = message.payload.decode('utf8')
     logging.info("space/status/klingel/count-OPEN contained: {}".format(payload))
-    msg = '<b>Es hat {} mal geklingelt, während der Space zu war. :(</b>'.format(payload)
+    msg = '<b>Es hat {} mal geklingelt, während der Space geschlossen war.</b>'.format(payload)
+    for room in list(bot.client.rooms.values()):
+        # XXX move to module configuration, allow multiple room names
+        if room.display_name == 'spacemaster':
+            room.send_html(msg)
+
+def announce_door(message, data, client, bot):
+    """schreibt in einen Raum den Türstatus"""
+    payload = message.payload.decode('utf8')
+    logging.info("space/status/door contained: {}".format(payload))
+    msg = '<b>Tuerstatus: {}</b>'.format(payload)
     for room in list(bot.client.rooms.values()):
         # XXX move to module configuration, allow multiple room names
         if room.display_name == 'spacemaster':
@@ -99,4 +109,5 @@ CMDS = {'!status': get_status,
 MSGS = { 'space/status/open': announce_status, 
          'space/status/klingel/count-OPEN': announce_count_open,
          'space/status/klingel/count-CLOSE': announce_count_close,
-         'space/status/klingel': announce_klingel }
+         'space/status/klingel': announce_klingel,
+         'space/status/door': announce_door}
