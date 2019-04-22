@@ -101,6 +101,15 @@ def announce_door(message, data, client, bot):
         if room.display_name == 'spacemaster':
             room.send_html(msg)
 
+def announce_door(message, data, client, bot):
+    """schreibt in einen Raum den Türstatus"""
+    payload = message.payload.decode('utf8')
+    logging.info("space/status/door contained: {}".format(payload))
+    msg = '<b>Tuerstatus: {}</b>'.format(payload)
+    for room in list(bot.client.rooms.values()):
+        # XXX move to module configuration, allow multiple room names
+        if room.display_name == 'spacemaster':
+            room.send_html(msg)
 
 
 CMDS = {'!status': get_status,
