@@ -265,7 +265,7 @@ def main():
     logging.basicConfig(level=log_level,
                         format='%(asctime)s %(name)s '
                         '%(levelname)s %(message)s')
-
+    log = logging.getLogger(__name__)
     # read bot config
     config = configparser.ConfigParser()
     if not os.path.exists('config.ini'):
@@ -316,6 +316,7 @@ def main():
         bot.login()
         if mqtt_broker:
             mqtt_client = mqtt.Client()
+            mqtt_client.enable_logger(logger=log)
             mqtt_client.connect(mqtt_broker)
             time.sleep(1)
             for topic in MESSAGES_REGISTRY.keys():
