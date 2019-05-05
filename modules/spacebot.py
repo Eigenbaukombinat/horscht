@@ -4,6 +4,7 @@ import logging
 
 
 SPACESTATUS_URL = 'https://eigenbaukombinat.de/status/status.json'
+SPACEOPEN_URL = 'https://eigenbaukombinat.de/status/openuntil.json'
 CURRENT_STATUS = 'zu'
 
 def get_last_status():
@@ -21,7 +22,11 @@ def get_status(event, message, bot, args):
     st = requests.get('{}?{}'.format(SPACESTATUS_URL, timestamp)).json()
 
     if st['state']['open']:
-        status = 'offen'
+        howlong = requests.get('{}?{}'.format(SPACEOPEN_URL, timestamp)).json()
+        if howlong.get('closetime') is not None:
+            status = 'bis mindestens {} Uhr offen'.format(howlong['closetime'])
+        else:
+            status = 'offen'
     else:
         status = 'zu'
 
@@ -111,6 +116,14 @@ def announce_door(message, data, client, bot):
         if room.display_name == 'spacemaster':
             room.send_html(msg)
 
+def announce_closetime(message, data, client, bot):
+    payload = message.payload.decode('utf8')
+    logging.info("space/status/closetime contained: {}".format(payload))
+    msg = '<b>Der Space ist bis mindestens {} Uhr offen.</b>'.format(payload)
+    for room in list(bot.client.rooms.values()):
+        # XXX move to module configuration, allow multiple room names
+        if room.display_name in ('spacemaster', 'sozialraum'):
+            room.send_html(msg)
 
 CMDS = {'!status': get_status,
         '!setstatus': set_status, }
@@ -119,4 +132,5 @@ MSGS = { 'space/status/open': announce_status,
          'space/status/klingel/count-OPEN': announce_count_open,
          'space/status/klingel/count-CLOSE': announce_count_close,
          'space/status/klingel': announce_klingel,
+         'space/status/closetime': announce_closetime,
          'space/status/door': announce_door}
