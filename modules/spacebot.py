@@ -106,16 +106,6 @@ def announce_door(message, data, client, bot):
         if room.display_name == 'spacemaster':
             room.send_html(msg)
 
-def announce_door(message, data, client, bot):
-    """schreibt in einen Raum den Türstatus"""
-    payload = message.payload.decode('utf8')
-    logging.info("space/status/door contained: {}".format(payload))
-    msg = '<b>Tuerstatus: {}</b>'.format(payload)
-    for room in list(bot.client.rooms.values()):
-        # XXX move to module configuration, allow multiple room names
-        if room.display_name == 'spacemaster':
-            room.send_html(msg)
-
 def announce_closetime(message, data, client, bot):
     payload = message.payload.decode('utf8')
     logging.info("space/status/closetime contained: {}".format(payload))
@@ -123,6 +113,15 @@ def announce_closetime(message, data, client, bot):
     for room in list(bot.client.rooms.values()):
         # XXX move to module configuration, allow multiple room names
         if room.display_name in ('spacemaster', 'sozialraum'):
+            room.send_html(msg)
+
+def announce_error(message, data, client, bot):
+    payload = message.payload.decode('utf8')
+    logging.info("space/status/error contained: {}".format(payload))
+    msg = '<b>FEHLER:</b><br/><i>{}</i>'.format(payload)
+    for room in list(bot.client.rooms.values()):
+        # XXX move to module configuration, allow multiple room names
+        if room.display_name in ('spacemaster'):
             room.send_html(msg)
 
 CMDS = {'!status': get_status,
@@ -133,4 +132,5 @@ MSGS = { 'space/status/open': announce_status,
          'space/status/klingel/count-CLOSE': announce_count_close,
          'space/status/klingel': announce_klingel,
          'space/status/closetime': announce_closetime,
+         'space/status/error': announce_error,
          'space/status/door': announce_door}
