@@ -107,6 +107,7 @@ def announce_door(message, data, client, bot):
             room.send_html(msg)
 
 def announce_closetime(message, data, client, bot):
+    """Schreibt in sozialraum und spacemaster wenn eine neue Schliesszeit gesetzt wurde."""
     payload = message.payload.decode('utf8')
     logging.info("space/status/closetime contained: {}".format(payload))
     msg = '<b>Der Space ist bis mindestens {} Uhr offen.</b>'.format(payload)
@@ -116,6 +117,7 @@ def announce_closetime(message, data, client, bot):
             room.send_html(msg)
 
 def announce_error(message, data, client, bot):
+    """Schreibt Fehlermeldungen in in den Spacemaster Raum."""
     payload = message.payload.decode('utf8')
     logging.info("space/status/error contained: {}".format(payload))
     msg = '<b>FEHLER:</b><br/><i>{}</i>'.format(payload)
