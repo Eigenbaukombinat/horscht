@@ -316,6 +316,7 @@ def main():
         bot.login()
         if mqtt_broker:
             mqtt_client = mqtt.Client(client_id='horscht')
+            bot.mqtt_client = mqtt_client
             mqtt_client.enable_logger(logger=log)
             mqtt_client.connect(mqtt_broker)
             time.sleep(1)
