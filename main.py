@@ -311,17 +311,20 @@ def main():
             return
         handler(message, data, client, bot)
 
+    def subscribe_to_topics(client, userdata, flags, rc):
+        time.sleep(1)
+        for topic in MESSAGES_REGISTRY.keys():
+            client.subscribe(topic)
+
     while True:
         bot = Bot(server, username, password, display_name)
         bot.login()
         if mqtt_broker:
             mqtt_client = mqtt.Client(client_id='horscht')
+            mqtt_client.on_connect = subscribe_to_topics
             bot.mqtt_client = mqtt_client
             mqtt_client.enable_logger(logger=log)
             mqtt_client.connect(mqtt_broker)
-            time.sleep(1)
-            for topic in MESSAGES_REGISTRY.keys():
-                mqtt_client.subscribe(topic)
             time.sleep(1)
             mqtt_client.on_message = mqtt_received
             mqtt_client.loop_start()
