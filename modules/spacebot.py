@@ -2,6 +2,12 @@ import datetime
 import requests
 import logging
 
+shlog = logging.getLogger('shlog')
+shlog.setLevel(logging.DEBUG)
+shlog_fh = logging.FileHandler('/home/spaceapi/spacehistory.log')
+shlog_formatter = logging.Formatter('%(asctime)s - %(message)s')
+shlog_fh.setFormatter(shlog_formatter)
+shlog.addHandler(shlog_fh)
 
 SPACESTATUS_URL = 'https://eigenbaukombinat.de/status/status.json'
 SPACEOPEN_URL = 'https://eigenbaukombinat.de/status/openuntil.json'
@@ -58,6 +64,7 @@ def announce_status(message, data, client, bot):
         logging.info("Received Message, but status did not change. :(")
         return
     set_last_status(status)
+    shlog.info(status)
     msg = '<b>Der Space ist jetzt {}.</b>'.format(status)
     for room in list(bot.client.rooms.values()):
         # write to 1:1 chats with me
@@ -71,6 +78,7 @@ def announce_klingel(message, data, client, bot):
     """schreibt in einen raum wenn es klingelt"""
     logging.info("reacting to space/status/klingel")
     msg = '<b>Klingelingeling!</b>'
+    shlog.info('klingel')
     for room in list(bot.client.rooms.values()):
         # XXX move to module configuration, allow multiple room names
         if room.display_name == 'spacemaster':
@@ -101,6 +109,7 @@ def announce_door(message, data, client, bot):
     payload = message.payload.decode('utf8')
     logging.info("space/status/door contained: {}".format(payload))
     msg = '<b>Tuerstatus: {}</b>'.format(payload)
+    shlog.info(payload)
     for room in list(bot.client.rooms.values()):
         # XXX move to module configuration, allow multiple room names
         if room.display_name == 'spacemaster':
@@ -111,6 +120,7 @@ def announce_closetime(message, data, client, bot):
     payload = message.payload.decode('utf8')
     logging.info("space/status/closetime contained: {}".format(payload))
     msg = '<b>Der Space ist bis mindestens {} Uhr offen.</b>'.format(payload)
+    shlog.info('closetime {}'.format(payload))
     for room in list(bot.client.rooms.values()):
         # XXX move to module configuration, allow multiple room names
         if room.display_name in ('spacemaster', 'sozialraum'):
