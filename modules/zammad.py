@@ -41,7 +41,7 @@ def send_notification(bot, ticket, ticket_id, config):
     ticket_from = html.escape(ticket["from"]) 
     subj = html.escape(ticket["subject"])
     txt = '<b>Neues Zammad Ticket von:</b> <i>%s</i><br>' % ticket_from 
-    txt += '"{subj}"<br>'
+    txt += '"%s"<br>' % subj
     txt += 'URL: <a href="https://z.eigenbaukombinat.de/#ticket/zoom/%s">https://z.eigenbaukombinat.de/#ticket/zoom/%s</a>' % ( ticket_id, ticket_id )
     room.send_html(txt)
 
@@ -50,16 +50,16 @@ def check_zammad(bot, config):
     """holt notifications vom zammad und postet sie in einen raum"""
     seen_ids = get_seen_ids()
     notifications = get_unread_notifications(config)
-    new_seen_ids = []
+    new_seen_ids = set() 
     for notification in notifications:
         ticket_id = notification["o_id"]
         ticket = zammad_get('/api/v1/ticket_articles/by_ticket/%s' % ticket_id, config)[-0]
         if ticket["to"] != config["addr"]:
             continue
-        if notification["id"] not in seen_ids:
+        if str(notification["id"]) not in seen_ids:
             send_notification(bot, ticket, ticket_id, config)
-        new_seen_ids.append(notification["id"])
-    write_seen_ids(new_seen_ids)
+        new_seen_ids.add(notification["id"])
+    write_seen_ids(new_seen_ids.union(seen_ids))
 
 
 CRON = check_zammad
