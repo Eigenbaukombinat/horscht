@@ -22,7 +22,7 @@ def set_last_status(status):
         lastst.write(status)
 
 
-def get_status(event, message, bot, args):
+def get_status(event, message, bot, args, config):
     """Erfahre, ob das Eigenbaukombinat gerade geöffnet ist."""
     timestamp = datetime.datetime.now().isoformat()
     st = requests.get('{}?{}'.format(SPACESTATUS_URL, timestamp)).json()
@@ -39,7 +39,7 @@ def get_status(event, message, bot, args):
     bot.reply(event, "<b>Der Space ist {}.</b>".format(status), html=True)
 
 
-def set_status(event, message, bot, args):
+def set_status(event, message, bot, args, config):
     """Setze den Space-Status falls jemand vergessen hat den Schalter
     zu benutzen. (Noch nicht implementiert.)"""
     which = ''
@@ -48,7 +48,7 @@ def set_status(event, message, bot, args):
     bot.reply(event, "Setze status auf %s. Nicht." % which)
 
 
-def announce_status(message, data, client, bot):
+def announce_status(message, data, client, bot, config):
     """Schreibt den spacestatus in alle Räume."""
     payload = message.payload.decode('utf8')
     logging.info("space/status/open contained: {}".format(payload))
@@ -74,7 +74,7 @@ def announce_status(message, data, client, bot):
         if room.display_name in ['sozialraum', 'spacemaster']:
             room.send_html(msg)
 
-def announce_klingel(message, data, client, bot):
+def announce_klingel(message, data, client, bot, config):
     """schreibt in einen raum wenn es klingelt"""
     logging.info("reacting to space/status/klingel")
     msg = '<b>Klingelingeling!</b>'
@@ -84,7 +84,7 @@ def announce_klingel(message, data, client, bot):
         if room.display_name == 'spacemaster':
             room.send_html(msg)
 
-def announce_count_close(message, data, client, bot):
+def announce_count_close(message, data, client, bot, config):
     """schreibt in einen raum wie oft es geklingelt hat"""
     payload = message.payload.decode('utf8')
     logging.info("space/status/klingel/count-CLOSE contained: {}".format(payload))
@@ -94,7 +94,7 @@ def announce_count_close(message, data, client, bot):
         if room.display_name == 'spacemaster':
             room.send_html(msg)
 
-def announce_count_open(message, data, client, bot):
+def announce_count_open(message, data, client, bot, config):
     """schreibt in einen raum wie oft es geklingelt hat"""
     payload = message.payload.decode('utf8')
     logging.info("space/status/klingel/count-OPEN contained: {}".format(payload))
@@ -104,7 +104,7 @@ def announce_count_open(message, data, client, bot):
         if room.display_name == 'spacemaster':
             room.send_html(msg)
 
-def announce_door(message, data, client, bot):
+def announce_door(message, data, client, bot, config):
     """schreibt in einen Raum den Türstatus"""
     payload = message.payload.decode('utf8')
     logging.info("space/status/door contained: {}".format(payload))
@@ -115,7 +115,7 @@ def announce_door(message, data, client, bot):
         if room.display_name == 'spacemaster':
             room.send_html(msg)
 
-def announce_closetime(message, data, client, bot):
+def announce_closetime(message, data, client, bot, config):
     """Schreibt in sozialraum und spacemaster wenn eine neue Schliesszeit gesetzt wurde."""
     payload = message.payload.decode('utf8')
     logging.info("space/status/closetime contained: {}".format(payload))
@@ -126,7 +126,7 @@ def announce_closetime(message, data, client, bot):
         if room.display_name in ('spacemaster', 'sozialraum'):
             room.send_html(msg)
 
-def announce_error(message, data, client, bot):
+def announce_error(message, data, client, bot, config):
     """Schreibt Fehlermeldungen in in den Spacemaster Raum."""
     payload = message.payload.decode('utf8')
     logging.info("space/status/error contained: {}".format(payload))

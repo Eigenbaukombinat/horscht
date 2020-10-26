@@ -1,4 +1,5 @@
 bin/
+seen_ids
 lib/
 lib64
 pyvenv.cfg

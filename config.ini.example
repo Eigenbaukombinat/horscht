@@ -16,3 +16,11 @@ allowed_rooms =
 [modules.helloworld]
 # allowed by all users in this room
 allowed_rooms = #testraum:matrix.eigenbaukombinat.de
+
+[zammad-orga]
+module = modules.zammad
+secs = 10
+url = https://z.eigenbaukombinat.de
+token = <your zammad token> 
+addr = <zammad incoming mail address> 
+room = orga

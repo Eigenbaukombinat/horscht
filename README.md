@@ -69,7 +69,7 @@ It must accept exactly 4 arguments:
 * **args** Arguments which where given to the command (List).
 
 ```python
-def my_function(event, message, bot, args):
+def my_function(event, message, bot, args, config):
 	"""Help text for your command."""
 	bot.reply(event, "Heyja!")
 ```
@@ -93,7 +93,7 @@ accept these 4 arguments:
 * **bot** The Bot instance. In the example below it is used to send the received text into every room the bot is in.
 
 ```python
-def announce_status(message, data, client, bot):
+def announce_status(message, data, client, bot, config):
 	"""Help text."""
 	text = message.payload.decode('utf8')
     for room_id in bot.client.rooms:
@@ -105,3 +105,21 @@ You have to register your function, by mapping the topic in the MSGS dict to you
 ```python
 MSGS = { 'example/topic': announce_status }
 ```
+
+### Timed messages
+
+
+```python
+def say_blah(bot, config):
+    for room_id in bot.client.rooms:
+        bot.client.rooms[room_id].send_notice("BLAH")
+```
+
+You have to register your timed actions via the CRON variable.
+
+```python
+CRON = say_blah
+```
+
+In your config, you can have more than one configs for your command. See config.ini.example for an example. 
+The config section is passed to the function as "config" parameter.

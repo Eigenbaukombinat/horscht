@@ -17,6 +17,8 @@ import urllib.parse
 
 COMMAND_REGISTRY = {}
 MESSAGES_REGISTRY = {}
+CRON_REGISTRY = [] 
+MODULE_CONFIG = {}
 
 ACL_ROOMS = {}
 ACL_USERS = {}
@@ -99,7 +101,7 @@ class Bot(object):
             return
 
         if self.command_allowed(cmd, event['sender'], room):
-            command(event, command, self, args)
+            command(event, command, self, args, MODULE_CONFIG)
 
     def reply(self, event, message, html=False):
         """Replies to the given event with the provided message."""
@@ -158,7 +160,7 @@ class Bot(object):
                 logging.info("Command found, handling message: %s" % message)
                 command_found = True
                 args = message[match.start():].split(' ')
-                self.handle_command(event, args[0], args[1:])
+                self.handle_command(event, args[0], args[1:], MODULE_CONFIG)
                 break
         if not command_found and message.startswith('!help'):
             self.reply(event, self.get_help(event), html=True)
@@ -223,6 +225,8 @@ class Bot(object):
         logging.info("starting listener thread")
         self.client.start_listener_thread(exception_handler=exception_handler)
 
+        secs = 0
+        qsecs = 0
         while True:
             time.sleep(0.25)
 
@@ -234,6 +238,17 @@ class Bot(object):
             while not self.invite_queue.empty():
                 room_id, invite_state = self.invite_queue.get_nowait()
                 self.handle_invite(room_id, invite_state)
+            
+            # handle cron-type modules
+            qsecs += 1
+            if qsecs == 4:
+                qsecs = 0
+                secs += 1
+                for cronsecs, func, module_name in CRON_REGISTRY:
+                    if secs % int(cronsecs) == 0:
+                        func(self, MODULE_CONFIG[module_name]) 
+            if secs > 65000:
+                secs = 0
 
         logging.info("stopping listener thread")
         self.client.stop_listener_thread()
@@ -278,28 +293,32 @@ def main():
     display_name = config['bot']['display_name']
     mqtt_broker = config['bot']['mqtt_broker']
 
-    for module in config.sections():
-        if module == 'bot':
+    for module_name in config.sections():
+        if module_name == 'bot':
             # ignore general section 
             continue
+        module = config[module_name]["module"]
         try:
             mod = importlib.import_module(module)
         except ImportError:
             logging.error(
                 'Module {} not found. Ignoring.'.format(module))
             continue
+        MODULE_CONFIG[module_name] = config[module_name]
 
         logging.info('Loaded extension {}'.format(module))
         if hasattr(mod, 'CMDS'):
             for cmd, func in mod.CMDS.items():
                 HELP_CMDS.append((cmd, func.__doc__))
             COMMAND_REGISTRY.update(mod.CMDS)
-            ACL_USERS[cmd] = config[module].get('allowed_users')
-            ACL_ROOMS[cmd] = config[module].get('allowed_rooms')
+            ACL_USERS[cmd] = config[module_name].get('allowed_users')
+            ACL_ROOMS[cmd] = config[module_name].get('allowed_rooms')
         if hasattr(mod, 'MSGS'):
             for msg, func in mod.MSGS.items():
                 HELP_MSGS.append((msg, func.__doc__))
             MESSAGES_REGISTRY.update(mod.MSGS)
+        if hasattr(mod, 'CRON'):
+            CRON_REGISTRY.append((config[module_name]["secs"], mod.CRON, module_name))
 
     COMMANDS.extend(list(COMMAND_REGISTRY.keys()))
 

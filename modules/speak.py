@@ -4,7 +4,7 @@ import logging
 
 
 
-def talk(event, message, bot, args):
+def talk(event, message, bot, args, config):
     """Lässt Bernd sprechen."""
     sender = event['sender']
     atuser, server = sender.split(':')
