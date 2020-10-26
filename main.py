@@ -90,7 +90,7 @@ class Bot(object):
             return True
         return False
 
-    def handle_command(self, event, cmd, args):
+    def handle_command(self, event, cmd, args, config):
         """Handles the given command, possibly sending a reply to it."""
         cmd = cmd.lower()
         room = self.get_room(event)
