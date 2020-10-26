@@ -20,7 +20,7 @@ def write_seen_ids(ids):
 def zammad_get(url, config):
     response = requests.get(
         url=config["url"] + url,
-        headers={"Authorization": f'Bearer {config["token"]}'},
+        headers={"Authorization": 'Bearer %s' % config["token"]},
     )
     return response.json()
 
@@ -40,9 +40,9 @@ def send_notification(bot, ticket, ticket_id, config):
     # cook quote and send to room
     ticket_from = html.escape(ticket["from"]) 
     subj = html.escape(ticket["subject"])
-    txt = f'<b>Neues Zammad Ticket von:</b> <i>{ticket_from}</i><br>'
-    txt += f'"{subj}"<br>'
-    txt += f'URL: <a href="https://z.eigenbaukombinat.de/#ticket/zoom/{ticket_id}">https://z.eigenbaukombinat.de/#ticket/zoom/{ticket_id}</a>'
+    txt = '<b>Neues Zammad Ticket von:</b> <i>%s</i><br>' % ticket_from 
+    txt += '"{subj}"<br>'
+    txt += 'URL: <a href="https://z.eigenbaukombinat.de/#ticket/zoom/%s">https://z.eigenbaukombinat.de/#ticket/zoom/%s</a>' % ( ticket_id, ticket_id )
     room.send_html(txt)
 
 
@@ -53,7 +53,7 @@ def check_zammad(bot, config):
     new_seen_ids = []
     for notification in notifications:
         ticket_id = notification["o_id"]
-        ticket = zammad_get(f'/api/v1/ticket_articles/by_ticket/{ticket_id}', config)[-0]
+        ticket = zammad_get('/api/v1/ticket_articles/by_ticket/%s' % ticket_id, config)[-0]
         if ticket["to"] != config["addr"]:
             continue
         if notification["id"] not in seen_ids:
