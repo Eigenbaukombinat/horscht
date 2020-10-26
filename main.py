@@ -17,6 +17,7 @@ import urllib.parse
 
 COMMAND_REGISTRY = {}
 MESSAGES_REGISTRY = {}
+MESSAGES_CONFIG = {}
 CRON_REGISTRY = [] 
 MODULE_CONFIG = {}
 
@@ -246,6 +247,7 @@ class Bot(object):
                 secs += 1
                 for cronsecs, func, module_name in CRON_REGISTRY:
                     if secs % int(cronsecs) == 0:
+                        logging.info('Executing cron plugin %s.' % module_name)
                         func(self, MODULE_CONFIG[module_name]) 
             if secs > 65000:
                 secs = 0
@@ -306,7 +308,7 @@ def main():
             continue
         MODULE_CONFIG[module_name] = config[module_name]
 
-        logging.info('Loaded extension {}'.format(module))
+        logging.info('Loaded extension {} with name {}'.format(module, module_name))
         if hasattr(mod, 'CMDS'):
             for cmd, func in mod.CMDS.items():
                 HELP_CMDS.append((cmd, func.__doc__))
@@ -317,6 +319,7 @@ def main():
             for msg, func in mod.MSGS.items():
                 HELP_MSGS.append((msg, func.__doc__))
             MESSAGES_REGISTRY.update(mod.MSGS)
+            MESSAGES_CONFIG[msg] = config[module_name]
         if hasattr(mod, 'CRON'):
             CRON_REGISTRY.append((config[module_name]["secs"], mod.CRON, module_name))
 
@@ -326,9 +329,10 @@ def main():
 
     def mqtt_received(client, data, message):
         handler = MESSAGES_REGISTRY.get(message.topic)
+        config = MESSAGES_CONFIG.get(message.topic)
         if handler is None:
             return
-        handler(message, data, client, bot)
+        handler(message, data, client, bot, config)
 
     def subscribe_to_topics(client, userdata, flags, rc):
         time.sleep(1)
