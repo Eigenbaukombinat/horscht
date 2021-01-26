@@ -1,4 +1,5 @@
 bin/
+voting_*.json
 seen_ids
 lib/
 lib64
