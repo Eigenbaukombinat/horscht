@@ -312,14 +312,14 @@ def main():
         if hasattr(mod, 'CMDS'):
             for cmd, func in mod.CMDS.items():
                 HELP_CMDS.append((cmd, func.__doc__))
+                ACL_USERS[cmd] = config[module_name].get('allowed_users')
+                ACL_ROOMS[cmd] = config[module_name].get('allowed_rooms')
             COMMAND_REGISTRY.update(mod.CMDS)
-            ACL_USERS[cmd] = config[module_name].get('allowed_users')
-            ACL_ROOMS[cmd] = config[module_name].get('allowed_rooms')
         if hasattr(mod, 'MSGS'):
             for msg, func in mod.MSGS.items():
                 HELP_MSGS.append((msg, func.__doc__))
+                MESSAGES_CONFIG[msg] = config[module_name]
             MESSAGES_REGISTRY.update(mod.MSGS)
-            MESSAGES_CONFIG[msg] = config[module_name]
         if hasattr(mod, 'CRON'):
             CRON_REGISTRY.append((config[module_name]["secs"], mod.CRON, module_name))
 
