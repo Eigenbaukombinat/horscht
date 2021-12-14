@@ -61,7 +61,8 @@ def announce_status(message, data, client, bot, config):
         return
     if status == get_last_status():
         # status did not change, this bug should be fixed in spacemaster...
-        logging.info("Received Message, but status did not change. :(")
+        # also, this happens every time the door is locked after correctly closing the space via switch. (space close safetybelt)
+        logging.info("Received Message, but status did not change. Possibly door the has been locked after switch has been correctly set to closed.")
         return
     set_last_status(status)
     shlog.info(status)
