@@ -258,11 +258,12 @@ class Bot(object):
     def send_read_receipt(self, event):
         """Sends a read receipt for the given event."""
         if "room_id" in event and "event_id" in event:
+            content = dict() 
             room_id = urllib.parse.quote(event['room_id'])
             event_id = urllib.parse.quote(event['event_id'])
             self.client.api._send("POST", "/rooms/" + room_id +
                                   "/receipt/m.read/" + event_id,
-                                  api_path="/_matrix/client/r0")
+                                  api_path="/_matrix/client/r0", content=content)
 
 
 def main():
