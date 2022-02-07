@@ -14,6 +14,7 @@ import time
 import traceback
 import urllib.parse
 
+log = logging.getLogger(__name__)
 
 COMMAND_REGISTRY = {}
 MESSAGES_REGISTRY = {}
@@ -46,15 +47,27 @@ def sigterm_handler(_signo, _stack_frame):
     """Raises SystemExit(0), causing everything to cleanly shut down."""
     sys.exit(0)
 
+def mqtt_received(client, data, message):
+    handler = MESSAGES_REGISTRY.get(message.topic)
+    config = MESSAGES_CONFIG.get(message.topic)
+    if handler is None:
+        return
+    handler(message, data, client, bot, config)
+
+def subscribe_to_topics(client, userdata, flags, rc):
+    time.sleep(1)
+    for topic in MESSAGES_REGISTRY.keys():
+        client.subscribe(topic)
 
 class Bot(object):
     """Handles everything that the bot does."""
-    def __init__(self, server, username, password, display_name):
+    def __init__(self, server, username, password, display_name, mqtt_broker):
         self.client = None
         self.server = server
         self.username = username
         self.password = password
         self.display_name = display_name
+        self.mqtt_broker = mqtt_broker
         self.event_queue = queue.Queue()
         self.invite_queue = queue.Queue()
 
@@ -64,6 +77,34 @@ class Bot(object):
         client.login_with_password_no_sync(
             self.username, self.password)
         self.client = client
+
+    def connect_mqtt(self):
+        logging.info("connecting to mqtt server")
+        if self.mqtt_broker:
+            mqtt_client = mqtt.Client(client_id='horscht')
+            mqtt_client.on_connect = subscribe_to_topics
+            if hasattr(self, 'mqtt_client'):
+                del self.mqtt_client
+            self.mqtt_client = mqtt_client
+            self.mqtt_client.enable_logger(logger=log)
+            try:
+                self.mqtt_client.connect(self.mqtt_broker)
+            except:
+                logging.error('mqtt connect failed.')
+            else:
+                time.sleep(1)
+                self.mqtt_client.on_message = mqtt_received
+                self.mqtt_client.loop_start()
+                self.mqtt_client.on_disconnect = self.reconnect_mqtt
+                logging.info('mqtt connected.')
+
+    def reconnect_mqtt(self, *args, **kw):
+        """Will get called when mqtt disconnects."""
+        # is_connected seems to return true still, even if the mqtt
+        # server is down
+        if self.mqtt_client.is_connected():
+            self.mqtt_client.disconnect()
+        self.connect_mqtt()
 
     def get_room(self, event):
         """Returns the room the given event took place in."""
@@ -225,6 +266,9 @@ class Bot(object):
         # start listen thread
         logging.info("starting listener thread")
         self.client.start_listener_thread(exception_handler=exception_handler)
+        
+        # connect to mqtt 
+        self.connect_mqtt()
 
         secs = 0
         qsecs = 0
@@ -249,6 +293,12 @@ class Bot(object):
                     if secs % int(cronsecs) == 0:
                         logging.info('Executing cron plugin %s.' % module_name)
                         func(self, MODULE_CONFIG[module_name]) 
+
+            if (secs % 5) == 0:
+                # check connection to mqtt every 5 seconds
+                if not self.mqtt_client.is_connected():
+                    self.connect_mqtt()
+
             if secs > 65000:
                 secs = 0
 
@@ -283,7 +333,6 @@ def main():
     logging.basicConfig(level=log_level,
                         format='%(asctime)s %(name)s '
                         '%(levelname)s %(message)s')
-    log = logging.getLogger(__name__)
     # read bot config
     config = configparser.ConfigParser()
     if not os.path.exists('config.ini'):
@@ -328,30 +377,10 @@ def main():
 
 
 
-    def mqtt_received(client, data, message):
-        handler = MESSAGES_REGISTRY.get(message.topic)
-        config = MESSAGES_CONFIG.get(message.topic)
-        if handler is None:
-            return
-        handler(message, data, client, bot, config)
-
-    def subscribe_to_topics(client, userdata, flags, rc):
-        time.sleep(1)
-        for topic in MESSAGES_REGISTRY.keys():
-            client.subscribe(topic)
 
     while True:
-        bot = Bot(server, username, password, display_name)
+        bot = Bot(server, username, password, display_name, mqtt_broker)
         bot.login()
-        if mqtt_broker:
-            mqtt_client = mqtt.Client(client_id='horscht')
-            mqtt_client.on_connect = subscribe_to_topics
-            bot.mqtt_client = mqtt_client
-            mqtt_client.enable_logger(logger=log)
-            mqtt_client.connect(mqtt_broker)
-            time.sleep(1)
-            mqtt_client.on_message = mqtt_received
-            mqtt_client.loop_start()
         bot.run()
 
 
