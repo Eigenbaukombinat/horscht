@@ -43,7 +43,7 @@ def send_notification(bot, ticket, ticket_id, config):
     txt = '<b>Neues Zammad Ticket von:</b> <i>%s</i><br>' % ticket_from 
     txt += '"%s"<br>' % subj
     txt += 'URL: <a href="https://z.eigenbaukombinat.de/#ticket/zoom/%s">https://z.eigenbaukombinat.de/#ticket/zoom/%s</a>' % ( ticket_id, ticket_id )
-    room.send_html(txt)
+    bot.send_html(room, txt)
 
 
 def check_zammad(bot, config):

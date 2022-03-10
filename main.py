@@ -47,12 +47,6 @@ def sigterm_handler(_signo, _stack_frame):
     """Raises SystemExit(0), causing everything to cleanly shut down."""
     sys.exit(0)
 
-def mqtt_received(client, data, message):
-    handler = MESSAGES_REGISTRY.get(message.topic)
-    config = MESSAGES_CONFIG.get(message.topic)
-    if handler is None:
-        return
-    handler(message, data, client, bot, config)
 
 def subscribe_to_topics(client, userdata, flags, rc):
     time.sleep(1)
@@ -78,6 +72,22 @@ class Bot(object):
             self.username, self.password)
         self.client = client
 
+    def send_html(self, room, msg):
+        try:
+            room.send_html(msg)
+        except matrix_client.errors.MatrixHttpLibError:
+            log.error('Failed to send {} to {}. Maybe got disconnected, trying to re-connect.')
+            self.login()
+            room.send_html(msg)
+
+    def mqtt_received(self, client, data, message):
+        handler = MESSAGES_REGISTRY.get(message.topic)
+        config = MESSAGES_CONFIG.get(message.topic)
+        if handler is None:
+            return
+        handler(message, data, client, self, config)
+
+
     def connect_mqtt(self):
         logging.info("connecting to mqtt server")
         if self.mqtt_broker:
@@ -93,7 +103,7 @@ class Bot(object):
                 logging.error('mqtt connect failed.')
             else:
                 time.sleep(1)
-                self.mqtt_client.on_message = mqtt_received
+                self.mqtt_client.on_message = self.mqtt_received
                 self.mqtt_client.loop_start()
                 self.mqtt_client.on_disconnect = self.reconnect_mqtt
                 logging.info('mqtt connected.')

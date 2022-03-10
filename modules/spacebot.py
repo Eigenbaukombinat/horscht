@@ -70,10 +70,10 @@ def announce_status(message, data, client, bot, config):
     for room in list(bot.client.rooms.values()):
         # write to 1:1 chats with me
         if len(room._members) == 2:
-            room.send_html(msg)
+            bot.send_html(room, msg)
         # XXX move to module configuration, allow multiple room names
         if room.display_name in ['sozialraum', 'spacemaster']:
-            room.send_html(msg)
+            bot.send_html(room,msg)
 
 def announce_klingel(message, data, client, bot, config):
     """schreibt in einen raum wenn es klingelt"""
@@ -83,7 +83,7 @@ def announce_klingel(message, data, client, bot, config):
     for room in list(bot.client.rooms.values()):
         # XXX move to module configuration, allow multiple room names
         if room.display_name == 'spacemaster':
-            room.send_html(msg)
+            bot.send_html(room,msg)
 
 def announce_count_close(message, data, client, bot, config):
     """schreibt in einen raum wie oft es geklingelt hat"""
@@ -93,7 +93,7 @@ def announce_count_close(message, data, client, bot, config):
     for room in list(bot.client.rooms.values()):
         # XXX move to module configuration, allow multiple room names
         if room.display_name == 'spacemaster':
-            room.send_html(msg)
+            bot.send_html(room,msg)
 
 def announce_count_open(message, data, client, bot, config):
     """schreibt in einen raum wie oft es geklingelt hat"""
@@ -103,7 +103,7 @@ def announce_count_open(message, data, client, bot, config):
     for room in list(bot.client.rooms.values()):
         # XXX move to module configuration, allow multiple room names
         if room.display_name == 'spacemaster':
-            room.send_html(msg)
+            bot.send_html(room,msg)
 
 def announce_door(message, data, client, bot, config):
     """schreibt in einen Raum den Türstatus"""
@@ -114,7 +114,7 @@ def announce_door(message, data, client, bot, config):
     for room in list(bot.client.rooms.values()):
         # XXX move to module configuration, allow multiple room names
         if room.display_name == 'spacemaster':
-            room.send_html(msg)
+            bot.send_html(room,msg)
 
 def announce_closetime(message, data, client, bot, config):
     """Schreibt in sozialraum und spacemaster wenn eine neue Schliesszeit gesetzt wurde."""
@@ -125,7 +125,7 @@ def announce_closetime(message, data, client, bot, config):
     for room in list(bot.client.rooms.values()):
         # XXX move to module configuration, allow multiple room names
         if room.display_name in ('spacemaster', 'sozialraum'):
-            room.send_html(msg)
+            bot.send_html(room,msg)
 
 def announce_error(message, data, client, bot, config):
     """Schreibt Fehlermeldungen in in den Spacemaster Raum."""
@@ -135,7 +135,7 @@ def announce_error(message, data, client, bot, config):
     for room in list(bot.client.rooms.values()):
         # XXX move to module configuration, allow multiple room names
         if room.display_name in ('spacemaster'):
-            room.send_html(msg)
+            bot.send_html(room,msg)
 
 CMDS = {'!status': get_status,
         '!setstatus': set_status, }
