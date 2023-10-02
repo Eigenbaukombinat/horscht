@@ -9,7 +9,7 @@ def talk(event, message, bot, args, config):
     sender = event['sender']
     atuser, server = sender.split(':')
     user = atuser[1:]
-    text = '{}#{}'.format(user, ' '.join(args))
-    bot.mqtt_client.publish('space/bernd/speak/chat', text)
+    text = '{}'.format(' '.join(args))
+    bot.mqtt_client.publish('space/bernd/speak', text)
 
 CMDS = { '!talk': talk }

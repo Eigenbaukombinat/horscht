@@ -1,5 +1,6 @@
 from matrix_client.api import MatrixRequestError
 from matrix_client.client import MatrixClient
+import matrix_client.errors
 from requests.exceptions import ConnectionError, Timeout
 import argparse
 import configparser
@@ -68,8 +69,8 @@ class Bot(object):
     def login(self):
         """Logs onto the server."""
         client = MatrixClient(self.server)
-        client.login_with_password_no_sync(
-            self.username, self.password)
+        client.login(
+            self.username, self.password, sync=True, device_id='h0rsCHt')
         self.client = client
 
     def send_html(self, room, msg):
@@ -183,7 +184,8 @@ class Bot(object):
                 # room was deleted after invite or something; ignore it
                 logging.info('invited to nonexistent room {}'.format(room_id))
             else:
-                raise(e)
+                # also ignore other errors
+                logging.error(f'got error {e.code} while trying to join room {room_id}')
 
     def get_help(self, event):
         user = event['sender']

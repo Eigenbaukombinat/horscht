@@ -26,7 +26,8 @@ def announce_reminder(message, data, client, bot, config):
     #TODO:
     # event_start in zeitzone anzeigen (momentan utc)
     # event_start formatieren dd.mm.yyyy hh:mm
-    msg = '<b>Erinnerung: %s</b> (%s)<br/>%s<br/><i>(noch %s)</i>' % (summary, desc, event_start, time_left)
+    #msg = '<b>Erinnerung: %s</b> (%s)<br/>%s<br/><i>(noch %s)</i>' % (summary, desc, event_start, time_left)
+    msg = '<b>Erinnerung: %s</b> (%s)<br/><i>(noch %s)</i>' % (summary, desc, time_left)
     for room in list(bot.client.rooms.values()):
         # XXX move to module configuration, allow multiple room names
         if room.display_name in ('spacemaster',) and 'Tonne' not in msg:
