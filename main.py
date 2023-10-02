@@ -113,8 +113,11 @@ class Bot(object):
         """Will get called when mqtt disconnects."""
         # is_connected seems to return true still, even if the mqtt
         # server is down
-        if self.mqtt_client.is_connected():
-            self.mqtt_client.disconnect()
+        logging.error('Mqtt disconneted, trying to reconnect.')
+        #if self.mqtt_client.is_connected():
+        # just make extra sure we are disconnected
+        self.mqtt_client.disconnect()
+        time.sleep(1)
         self.connect_mqtt()
 
     def get_room(self, event):
