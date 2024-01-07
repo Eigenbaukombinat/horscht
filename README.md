@@ -6,7 +6,7 @@ A simple to extend matrix chatbot.
 ## Installation
 
 ```bash
-git clone git@github.com:Eigenbaukombinat/horscht.git
+git clone https://github.com/Eigenbaukombinat/horscht.git
 cd horscht
 python3 -m venv .
 bin/pip install -r requirements.txt
