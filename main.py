@@ -76,7 +76,7 @@ class Bot(object):
     def send_html(self, room, msg):
         try:
             room.send_html(msg)
-        except matrix_client.errors.MatrixHttpLibError:
+        except (matrix_client.errors.MatrixHttpLibError, matrix_client.errors.MatrixRequestError):
             log.error('Failed to send {} to {}. Maybe got disconnected, trying to re-connect.')
             self.login()
             room.send_html(msg)
