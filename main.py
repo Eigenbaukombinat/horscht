@@ -27,6 +27,7 @@ ACL_ROOMS = {}
 ACL_USERS = {}
 
 COMMANDS = []
+MSGHANDLERS = []
 HELP = '''{} reagiert auf folgendes:
 <ul>
 {}
@@ -210,6 +211,8 @@ class Bot(object):
 
     def handle_message(self, event, message):
         command_found = False
+        for msghandler in MSGHANDLERS:
+            msghandler(event, message)
         for command in COMMANDS:
             match = re.search(command, message, flags=re.IGNORECASE)
             if match and (match.start() == 0 or
@@ -387,7 +390,9 @@ def main():
             MESSAGES_REGISTRY.update(mod.MSGS)
         if hasattr(mod, 'CRON'):
             CRON_REGISTRY.append((config[module_name]["secs"], mod.CRON, module_name))
-
+        if hasattr(mod, 'MSGHANDLERS'):
+            for func in mod.MSGHANDLERS:
+                MSGHANDLERS.append(func)
     COMMANDS.extend(list(COMMAND_REGISTRY.keys()))
 
 
