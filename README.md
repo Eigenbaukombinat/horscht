@@ -121,5 +121,21 @@ You have to register your timed actions via the CRON variable.
 CRON = say_blah
 ```
 
+
+### Message handlers receiving all messages
+
+```python
+def handle_all_messages(event, message, bot, config):
+    # something
+```
+
+You have to register your message handlers via the MSGHANDLERS variable.
+
+```python
+MSGHANDLERS = [handle_all_messages]
+```
+
+### misc
+
 In your config, you can have more than one configs for your command. See config.ini.example for an example. 
 The config section is passed to the function as "config" parameter.
