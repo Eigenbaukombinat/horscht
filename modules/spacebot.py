@@ -72,7 +72,7 @@ def announce_status(message, data, client, bot, config):
         if len(room._members) == 2:
             bot.send_html(room, msg)
         # XXX move to module configuration, allow multiple room names
-        if room.display_name in ['sozialraum', 'spacemaster']:
+        if room.display_name in ['spacemaster']:
             bot.send_html(room,msg)
 
 def announce_klingel(message, data, client, bot, config):
@@ -117,14 +117,14 @@ def announce_door(message, data, client, bot, config):
             bot.send_html(room,msg)
 
 def announce_closetime(message, data, client, bot, config):
-    """Schreibt in sozialraum und spacemaster wenn eine neue Schliesszeit gesetzt wurde."""
+    """Schreibt in spacemaster wenn eine neue Schliesszeit gesetzt wurde."""
     payload = message.payload.decode('utf8')
     logging.info("space/status/closetime contained: {}".format(payload))
     msg = '<b>Der Space ist bis mindestens {} Uhr offen.</b>'.format(payload)
     shlog.info('closetime {}'.format(payload))
     for room in list(bot.client.rooms.values()):
         # XXX move to module configuration, allow multiple room names
-        if room.display_name in ('spacemaster', 'sozialraum'):
+        if room.display_name in ('spacemaster', ):
             bot.send_html(room,msg)
 
 def announce_error(message, data, client, bot, config):
