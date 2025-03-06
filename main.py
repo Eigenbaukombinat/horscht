@@ -42,8 +42,11 @@ HELP_CMDS = []
 
 def format_help_entry(cmd, txt):
     out = '<li><b>{}</b> – {}</li>\n'
-    if txt.startswith(' '):
+    if not txt or txt.startswith(' '):
+        if txt is None:
+            txt = ''
         out = '<li><b>{}</b>{}</li>\n'
+
     return out.format(cmd, txt)
 
 

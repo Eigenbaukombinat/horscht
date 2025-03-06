@@ -63,7 +63,7 @@ def _announce(bot, topic, msg):
 
 
 def announce_status(message, data, client, bot, config):
-    """Schreibt den spacestatus in alle Räume."""
+    """Schreibt den spacestatus in Räume, die das Thema <i>space/status/open</i> abonniert haben."""
     payload = message.payload.decode('utf8')
     logging.info("space/status/open contained: {}".format(payload))
     if payload == 'true':
@@ -87,10 +87,10 @@ def announce_status(message, data, client, bot, config):
 
 
 def announce_generic(message, data, client, bot, config):
-    """schreibt in einen raum wenn eine mqtt empfangen wurde"""
-    logging.info("reacting to {message.topic}")
-    shlog.info('klingel')
-    _announce(bot, message.topic, ROOM_MSGS[message.topic])
+    payload = message.payload.decode('utf8')
+    shlog.info(f'{message.topic}: {payload}')
+    logging.info(f"{message.topic} contained: {payload}")
+    _announce(bot, message.topic, ROOM_MSGS[message.topic].format(payload))
 
 
 def subscribe(event, message, bot, args, config):
