@@ -41,7 +41,10 @@ HELP_CMDS = []
 
 
 def format_help_entry(cmd, txt):
-    return '<li><b>{}</b> – {}</li>\n'.format(cmd, txt)
+    out = '<li><b>{}</b> – {}</li>\n'
+    if txt.startswith(' '):
+        out = '<li><b>{}</b>{}</li>\n'
+    return out.format(cmd, txt)
 
 
 def sigterm_handler(_signo, _stack_frame):

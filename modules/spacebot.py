@@ -94,7 +94,7 @@ def announce_generic(message, data, client, bot, config):
 
 
 def subscribe(event, message, bot, args, config):
-    """Abonniert das angegebene MQTT Thema für einen Raum. Es werden nur die space/status/* Themen unterstützt!"""
+    """ <i>thema</i> (z.B. <i>space/status/klingel</i>) – Abonniert das angegebene MQTT Thema für einen Raum. Es werden nur die space/status/* Themen unterstützt!"""
     topic = ''
     if len(args):
         topic = args[0]
@@ -106,7 +106,7 @@ def subscribe(event, message, bot, args, config):
     save_subscriptions()
 
 def unsubscribe(event, message, bot, args, config):
-    """Beendet ein Abo für das angegebene Thema für einen Raum."""
+    """ <i>thema</i> (z.B. <i>space/status/klingel</i>) – Beendet ein Abo für das angegebene Thema für einen Raum."""
     topic = ''
     if len(args):
         topic = args[0]
