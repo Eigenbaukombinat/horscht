@@ -31,7 +31,7 @@ HELP = '''{} reagiert auf folgendes:
 <ul>
 {}
 </ul>
-{} reagiert auch auf MQTT-Nachrichten:
+{} reagiert auch auf MQTT-Nachrichten zu folgenden Themen:
 <ul>
 {}
 </ul>
