@@ -1,3 +1,4 @@
+.subscriptions
 bin/
 voting_*.json
 seen_ids
