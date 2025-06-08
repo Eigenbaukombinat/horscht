@@ -1,26 +1,81 @@
+# Matrix Bot Configuration Example
+# Copy this file to config.ini and edit the values for your setup
+
 [bot]
-server = https://matrix.eigenbaukombinat.de
-username = horscht
-display_name = horscht
-password = xxx
+# Your Matrix server URL (homeserver)
+server = https://matrix.example.com
+
+# Bot's Matrix username (without the @ symbol and server part)
+username = mybot
+
+# The display name shown in Matrix rooms
+display_name = My Helpful Bot
+
+# Bot's Matrix account password
+password = your_secure_password_here
+
+# MQTT broker address for IoT integration (leave empty to disable MQTT)
+# Examples: localhost, mqtt.example.com, 192.168.1.100
 mqtt_broker = localhost
 
+# Example: Public commands that anyone can use in specified rooms
+[modules.helloworld]
+# These rooms allow anyone to use helloworld commands
+allowed_rooms = #general:matrix.example.com
+    #fun:matrix.example.com
+
+# Example: Restricted commands for admins only
 [modules.quote]
-# explicitly allow the commands defined by this module to some users
-# overrides allowed rooms, commands are allowed everywhere 
-allowed_users = @nilo:matrix.eigenbaukombinat.de
-     @user2:matrix.eigenbaukombinat.de
-# private command, not allowed in any room (only by above users)
+# Only these users can use quote commands, anywhere
+allowed_users = @admin:matrix.example.com
+    @moderator:matrix.example.com
+# Empty allowed_rooms means regular users can't use it anywhere
 allowed_rooms =
 
-[modules.helloworld]
-# allowed by all users in this room
-allowed_rooms = #testraum:matrix.eigenbaukombinat.de
+# Example: Mixed access - public in some rooms, admin anywhere
+[modules.weather]
+# Regular users can use weather commands in these rooms
+allowed_rooms = #general:matrix.example.com
+# These users can use weather commands anywhere
+allowed_users = @admin:matrix.example.com
 
-[zammad-orga]
+# Example: MQTT integration module  
+[modules.homeautomation]
+# Custom settings for this module
+alert_rooms = #alerts:matrix.example.com
+    #family:matrix.example.com
+mqtt_prefix = home/
+debug_mode = false
+
+# Example: Scheduled task module
+[modules.dailyreminder]
+# Check every hour, but only send reminder at 9 AM
+secs = 3600
+reminder_message = Don't forget to check your daily tasks!
+reminder_rooms = #general:matrix.example.com
+
+# Example: System monitoring (runs every 5 minutes)
+[modules.monitoring]
+secs = 300
+website_to_check = https://example.com
+monitor_rooms = #alerts:matrix.example.com
+alert_threshold = 5
+
+# Example: Custom module with API integration
+[modules.weatherapi]
+api_key = your_weather_api_key_here
+default_city = London
+temperature_unit = celsius
+# Only allow in weather-related rooms
+allowed_rooms = #weather:matrix.example.com
+    #general:matrix.example.com
+
+# Example: Zammad ticket system integration
+[zammad-support]
 module = modules.zammad
+# Check every 10 seconds for new tickets
 secs = 10
-url = https://z.eigenbaukombinat.de
-token = <your zammad token> 
-addr = <zammad incoming mail address> 
-room = orga
+url = https://support.example.com
+token = your_zammad_api_token_here
+addr = support@example.com
+room = #support:matrix.example.com
