@@ -436,265 +436,63 @@ def weekly_summary(bot, config):
 CRON = system_status_check
 ```
 
-### Multiple Scheduled Tasks
+## Recurring Reminders Module
 
-Since each module can only have one `CRON` function, create separate modules for different schedules. For long-term schedules, use frequent checks with time-based logic:
+The bot includes a built-in recurring reminders module that allows room members to create weekly reminders that are automatically sent at specified days and times.
 
-**modules/hourly_checks.py**:
-```python
-def hourly_task(bot, config):
-    # Your hourly task here
-    pass
+### Features
 
-CRON = hourly_task
+- **Create reminders**: Any room member can create reminders with custom text, weekday, and time
+- **Automatic delivery**: Reminders are sent automatically every week at the specified time
+- **Room-specific**: Reminders are tied to the room where they were created
+- **User management**: Users can list and delete their own reminders
+- **German language support**: Supports German weekday names
+
+### Usage
+
+**Create a reminder:**
+```
+!reminder <weekday> <time> <message>
 ```
 
-**modules/daily_reports.py**:
-```python
-import datetime
-
-def daily_task(bot, config):
-    # Check if it's 9 AM for daily reports
-    if datetime.datetime.now().hour == 9:
-        # Your daily task here
-        pass
-
-CRON = daily_task
+**Examples:**
+```
+!reminder montag 09:00 Team-Meeting im Konferenzraum
+!reminder freitag 17:30 Arbeitszeit-Ende!
+!reminder sonntag 20:00 Tatort schauen 📺
 ```
 
-**modules/weekly_summary.py**:
-```python
-import datetime
-
-def weekly_check(bot, config):
-    now = datetime.datetime.now()
-    # Check if it's Sunday at 8 PM for weekly summary
-    if now.weekday() == 6 and now.hour == 20:
-        # Your weekly task here
-        pass
-
-CRON = weekly_check
+**List reminders:**
+```
+!reminder list
 ```
 
-Then in `config.ini`:
+**Delete a reminder:**
+```
+!reminder delete <number>
+```
+
+### Supported Weekdays
+
+German: `montag`, `dienstag`, `mittwoch`, `donnerstag`, `freitag`, `samstag`, `sonntag`
+English: `monday`, `tuesday`, `wednesday`, `thursday`, `friday`, `saturday`, `sunday`
+
+### Time Format
+
+Use 24-hour format: `HH:MM` (e.g., `14:30` for 2:30 PM)
+
+### Configuration
+
+Add to your `config.ini`:
 ```ini
-[modules.hourly_checks]
-secs = 3600
-
-[modules.daily_reports]
-# Check every hour, but only act at 9 AM
-secs = 3600
-
-[modules.weekly_summary]
-# Check every hour, but only act on Sunday at 8 PM
-secs = 3600
+[modules.recurring_reminders]
+# Check every minute for reminders to send
+secs = 60
 ```
 
-## Using Configuration Settings
+### Data Storage
 
-All modules can read custom settings from their config.ini section. This makes your modules flexible and reusable.
-
-### Reading Configuration Values
-
-```python
-def my_function(event, message, bot, args, config):
-    # Get a setting with a default value
-    api_key = config.get('api_key', 'default_key_here')
-    
-    # Get a required setting (will be None if missing)
-    database_url = config.get('database_url')
-    if not database_url:
-        bot.reply(event, "Error: database_url not configured!")
-        return
-    
-    # Get a list of values (one per line)
-    allowed_users = config.get('allowed_users', '').split('\n')
-    user_list = [user.strip() for user in allowed_users if user.strip()]
-```
-
-### Example Configuration Section
-
-```ini
-[modules.myadvancedbot]
-api_key = your_secret_api_key_here
-database_url = postgresql://user:pass@localhost/botdb
-max_results = 10
-debug_mode = true
-allowed_users = @admin:matrix.example.com
-    @moderator:matrix.example.com
-    @user:matrix.example.com
-target_rooms = #alerts:matrix.example.com
-    #general:matrix.example.com
-```
-
-## Complete Module Example
-
-Here's a complete module that demonstrates commands, MQTT, and scheduled tasks:
-
-**modules/smart_home.py**:
-```python
-import datetime
-
-def lights_command(event, message, bot, args, config):
-    """Control smart lights. Usage: !lights on/off/status"""
-    
-    if not args:
-        bot.reply(event, "Usage: !lights on/off/status")
-        return
-    
-    action = args[0].lower()
-    
-    if action in ['on', 'off']:
-        # Send MQTT command to smart lights
-        if hasattr(bot, 'mqtt_client'):
-            bot.mqtt_client.publish('home/lights/living_room/set', action)
-            bot.reply(event, f"💡 Turning lights {action}")
-        else:
-            bot.reply(event, "MQTT not available")
-    
-    elif action == 'status':
-        # Request status via MQTT
-        if hasattr(bot, 'mqtt_client'):
-            bot.mqtt_client.publish('home/lights/living_room/get', 'state')
-            bot.reply(event, "Checking light status...")
-        else:
-            bot.reply(event, "MQTT not available")
-    
-    else:
-        bot.reply(event, "Invalid action. Use: on, off, or status")
-
-def handle_light_status(message, data, client, bot, config):
-    """Handles light status updates from MQTT."""
-    
-    status = message.payload.decode('utf8')
-    status_emoji = "💡" if status == "on" else "🌑"
-    
-    announcement = f"{status_emoji} Living room lights are {status}"
-    
-    # Send to all rooms
-    for room_id in bot.client.rooms:
-        bot.client.rooms[room_id].send_notice(announcement)
-
-def nightly_lights_off(bot, config):
-    """Automatically turn off lights at night."""
-    
-    current_hour = datetime.datetime.now().hour
-    
-    # Turn off lights at 11 PM (23:00)
-    if current_hour == 23:
-        if hasattr(bot, 'mqtt_client'):
-            bot.mqtt_client.publish('home/lights/living_room/set', 'off')
-            
-            # Announce to family rooms only
-            family_rooms = config.get('family_rooms', '').split('\n')
-            for room_address in family_rooms:
-                if room_address.strip():
-                    for room_id, room in bot.client.rooms.items():
-                        if room.canonical_alias == room_address.strip():
-                            room.send_notice("🌙 Automatically turning off lights for bedtime")
-                            break
-
-# Register all the features
-CMDS = {
-    '!lights': lights_command
-}
-
-MSGS = {
-    'home/lights/living_room/status': handle_light_status
-}
-
-CRON = nightly_lights_off
-```
-
-**config.ini**:
-```ini
-[modules.smart_home]
-# Run the scheduled task every hour to check for bedtime
-secs = 3600
-family_rooms = #family:matrix.example.com
-```
-
-## Timing Limitations and Best Practices
-
-**Important**: The `secs` parameter has a maximum value of 65001 (about 18 hours). For longer intervals:
-
-### Daily Tasks
-```python
-import datetime
-
-def daily_task(bot, config):
-    """Runs daily at a specific time."""
-    # Check if it's the right hour (e.g., 9 AM)
-    if datetime.datetime.now().hour == 9:
-        # Your daily logic here
-        pass
-
-CRON = daily_task
-```
-
-Configuration:
-```ini
-[modules.daily_task]
-# Check every hour, act only at 9 AM
-secs = 3600
-```
-
-### Weekly Tasks
-```python
-import datetime
-
-def weekly_task(bot, config):
-    """Runs weekly on Sunday at 8 PM."""
-    now = datetime.datetime.now()
-    # Sunday = 6, Monday = 0
-    if now.weekday() == 6 and now.hour == 20:
-        # Your weekly logic here
-        pass
-
-CRON = weekly_task
-```
-
-### Monthly Tasks
-```python
-import datetime
-
-def monthly_task(bot, config):
-    """Runs on the first day of each month at 10 AM."""
-    now = datetime.datetime.now()
-    if now.day == 1 and now.hour == 10:
-        # Your monthly logic here
-        pass
-
-CRON = monthly_task
-```
-
-### Avoiding Duplicate Runs
-
-For tasks that should only run once per day/week/month, you can track the last execution:
-
-```python
-import datetime
-import os
-
-def daily_task_once(bot, config):
-    """Ensures the task only runs once per day."""
-    today = datetime.datetime.now().strftime("%Y-%m-%d")
-    flag_file = f"/tmp/bot_daily_task_{today}"
-    
-    # Check if we already ran today
-    if os.path.exists(flag_file):
-        return
-    
-    # Check if it's the right time (9 AM)
-    if datetime.datetime.now().hour == 9:
-        # Your task logic here
-        
-        # Mark that we ran today
-        with open(flag_file, 'w') as f:
-            f.write(today)
-
-CRON = daily_task_once
-```
+Reminders are stored in a `reminders.json` file in the bot's directory and persist across bot restarts.
 
 ## Learning from Existing Modules
 

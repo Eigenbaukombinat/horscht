@@ -79,3 +79,12 @@ url = https://support.example.com
 token = your_zammad_api_token_here
 addr = support@example.com
 room = #support:matrix.example.com
+
+# Example: Recurring reminders module
+# Allows room members to create recurring weekly reminders
+[modules.recurring_reminders]
+# Check every 30 seconds for more reliable reminder delivery
+# This ensures reminders are sent even if the previous check was missed
+secs = 30
+# Anyone can use reminder commands in any room the bot is in
+# (access is controlled per room by the bot's presence)
