@@ -20,12 +20,14 @@ mqtt_broker = localhost
 
 # Example: Public commands that anyone can use in specified rooms
 [modules.helloworld]
+module = modules.helloworld
 # These rooms allow anyone to use helloworld commands
 allowed_rooms = #general:matrix.example.com
     #fun:matrix.example.com
 
 # Example: Restricted commands for admins only
 [modules.quote]
+module = modules.quote
 # Only these users can use quote commands, anywhere
 allowed_users = @admin:matrix.example.com
     @moderator:matrix.example.com
@@ -34,6 +36,7 @@ allowed_rooms =
 
 # Example: Mixed access - public in some rooms, admin anywhere
 [modules.weather]
+module = modules.weather
 # Regular users can use weather commands in these rooms
 allowed_rooms = #general:matrix.example.com
 # These users can use weather commands anywhere
@@ -41,6 +44,7 @@ allowed_users = @admin:matrix.example.com
 
 # Example: MQTT integration module  
 [modules.homeautomation]
+module = modules.homeautomation
 # Custom settings for this module
 alert_rooms = #alerts:matrix.example.com
     #family:matrix.example.com
@@ -49,6 +53,7 @@ debug_mode = false
 
 # Example: Scheduled task module
 [modules.dailyreminder]
+module = modules.dailyreminder
 # Check every hour, but only send reminder at 9 AM
 secs = 3600
 reminder_message = Don't forget to check your daily tasks!
@@ -56,6 +61,7 @@ reminder_rooms = #general:matrix.example.com
 
 # Example: System monitoring (runs every 5 minutes)
 [modules.monitoring]
+module = modules.monitoring
 secs = 300
 website_to_check = https://example.com
 monitor_rooms = #alerts:matrix.example.com
@@ -63,6 +69,7 @@ alert_threshold = 5
 
 # Example: Custom module with API integration
 [modules.weatherapi]
+module = modules.weatherapi
 api_key = your_weather_api_key_here
 default_city = London
 temperature_unit = celsius
@@ -83,6 +90,7 @@ room = #support:matrix.example.com
 # Example: Recurring reminders module
 # Allows room members to create recurring weekly reminders
 [modules.recurring_reminders]
+module = modules.recurring_reminders
 # Check every 30 seconds for more reliable reminder delivery
 # This ensures reminders are sent even if the previous check was missed
 secs = 30

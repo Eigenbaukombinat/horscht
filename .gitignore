@@ -9,3 +9,5 @@ share/
 *.pyc
 config.ini
 pip-selfcheck.json
+reminders.json
+last_reminder_check.txt

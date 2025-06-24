@@ -55,34 +55,33 @@ def save_reminders(reminders):
 def create_reminder(event, message, bot, args, config):
     """Create a new recurring reminder."""
     
-    if len(args) < 3:
-        help_text = """
-📅 **Recurring Reminder erstellen**
-
-**Verwendung:** `!reminder <wochentag> <uhrzeit> <nachricht>`
-
-**Beispiele:**
-• `!reminder montag 09:00 Team-Meeting im Konferenzraum`
-• `!reminder freitag 17:30 Arbeitszeit-Ende!`
-• `!reminder sonntag 20:00 Tatort schauen 📺`
-
-**Wochentage:** montag, dienstag, mittwoch, donnerstag, freitag, samstag, sonntag
-**Uhrzeitformat:** HH:MM (24-Stunden-Format)
-
-**Weitere Befehle:**
-• `!reminder list` - Alle Reminder anzeigen
-• `!reminder delete <nummer>` - Reminder löschen
-"""
-        bot.reply(event, help_text)
-        return
-    
     # Handle special commands
-    if args[0].lower() == 'list':
+    if args and args[0].lower() == 'list':
         list_reminders(event, message, bot, args, config)
         return
     
-    if args[0].lower() == 'delete':
+    if args and args[0].lower() == 'delete':
         delete_reminder(event, message, bot, args, config)
+        return
+    
+    if not args or len(args) < 3:
+        help_text = """
+📅 <b>Recurring Reminder erstellen</b><br><br>
+
+<b>Verwendung:</b> <code>!reminder &lt;wochentag&gt; &lt;uhrzeit&gt; &lt;nachricht&gt;</code><br><br>
+
+<b>Beispiele:</b><br>
+• <code>!reminder montag 09:00 Team-Meeting im Konferenzraum</code><br>
+• <code>!reminder freitag 17:30 Arbeitszeit-Ende!</code><br>
+
+<b>Wochentage:</b> montag, dienstag, mittwoch, donnerstag, freitag, samstag, sonntag<br>
+<b>Uhrzeitformat:</b> HH:MM (24-Stunden-Format)<br><br>
+
+<b>Weitere Befehle:</b><br>
+• <code>!reminder list</code> - Alle Reminder anzeigen<br>
+• <code>!reminder delete &lt;nummer&gt;</code> - Reminder löschen
+"""
+        bot.reply(event, help_text, html=True)
         return
     
     weekday_str = args[0].lower()
@@ -91,7 +90,7 @@ def create_reminder(event, message, bot, args, config):
     
     # Validate weekday
     if weekday_str not in WEEKDAY_MAP:
-        bot.reply(event, f"❌ Ungültiger Wochentag: {weekday_str}\nGültige Wochentage: montag, dienstag, mittwoch, donnerstag, freitag, samstag, sonntag")
+        bot.reply(event, f"❌ Ungültiger Wochentag: <b>{weekday_str}</b><br>Gültige Wochentage: montag, dienstag, mittwoch, donnerstag, freitag, samstag, sonntag", html=True)
         return
     
     # Validate time format
@@ -107,7 +106,7 @@ def create_reminder(event, message, bot, args, config):
             raise ValueError("Time out of range")
             
     except ValueError:
-        bot.reply(event, f"❌ Ungültiges Uhrzeitformat: {time_str}\nBitte verwende das Format HH:MM (z.B. 14:30)")
+        bot.reply(event, f"❌ Ungültiges Uhrzeitformat: <b>{time_str}</b><br>Bitte verwende das Format HH:MM (z.B. 14:30)", html=True)
         return
     
     # Get room information
@@ -138,17 +137,17 @@ def create_reminder(event, message, bot, args, config):
     
     # Confirm creation
     confirmation = f"""
-✅ **Reminder erstellt!**
+✅ <b>Reminder erstellt!</b><br><br>
 
-📅 **Wochentag:** {reminder['weekday_name']}
-🕐 **Uhrzeit:** {reminder['time_str']}
-💬 **Nachricht:** {reminder['message']}
-👤 **Erstellt von:** {sender}
+📅 <b>Wochentag:</b> {reminder['weekday_name']}<br>
+🕐 <b>Uhrzeit:</b> {reminder['time_str']}<br>
+💬 <b>Nachricht:</b> {reminder['message']}<br>
+👤 <b>Erstellt von:</b> {sender}<br><br>
 
 Der Reminder wird jeden {reminder['weekday_name']} um {reminder['time_str']} in diesem Raum gesendet.
 """
     
-    bot.reply(event, confirmation)
+    bot.reply(event, confirmation, html=True)
 
 def list_reminders(event, message, bot, args, config):
     """List all reminders for the current room."""
@@ -160,31 +159,31 @@ def list_reminders(event, message, bot, args, config):
     room_reminders = [r for r in reminders if r['room_id'] == room_id]
     
     if not room_reminders:
-        bot.reply(event, "📅 Keine Reminder für diesen Raum gefunden.\n\nErstelle einen neuen Reminder mit: `!reminder <wochentag> <uhrzeit> <nachricht>`")
+        bot.reply(event, "📅 Keine Reminder für diesen Raum gefunden.<br><br>Erstelle einen neuen Reminder mit: <code>!reminder &lt;wochentag&gt; &lt;uhrzeit&gt; &lt;nachricht&gt;</code>", html=True)
         return
     
-    reminder_list = "📅 **Aktive Reminder für diesen Raum:**\n\n"
+    reminder_list = "📅 <b>Aktive Reminder für diesen Raum:</b><br><br>"
     
     for reminder in room_reminders:
-        reminder_list += f"**#{reminder['id']}** - {reminder['weekday_name']} um {reminder['time_str']}\n"
-        reminder_list += f"💬 {reminder['message']}\n"
-        reminder_list += f"👤 Erstellt von: {reminder['creator']}\n\n"
+        reminder_list += f"<b>#{reminder['id']}</b> - {reminder['weekday_name']} um {reminder['time_str']}<br>"
+        reminder_list += f"💬 {reminder['message']}<br>"
+        reminder_list += f"👤 Erstellt von: {reminder['creator']}<br><br>"
     
-    reminder_list += "**Tipp:** Verwende `!reminder delete <nummer>` um einen Reminder zu löschen."
+    reminder_list += "<b>Tipp:</b> Verwende <code>!reminder delete &lt;nummer&gt;</code> um einen Reminder zu löschen."
     
-    bot.reply(event, reminder_list)
+    bot.reply(event, reminder_list, html=True)
 
 def delete_reminder(event, message, bot, args, config):
     """Delete a reminder by ID."""
     
     if len(args) < 2:
-        bot.reply(event, "❌ Bitte gib die Nummer des zu löschenden Reminders an.\nBeispiel: `!reminder delete 1`\n\nVerwende `!reminder list` um alle Reminder anzuzeigen.")
+        bot.reply(event, "❌ Bitte gib die Nummer des zu löschenden Reminders an.<br>Beispiel: <code>!reminder delete 1</code><br><br>Verwende <code>!reminder list</code> um alle Reminder anzuzeigen.", html=True)
         return
     
     try:
         reminder_id = int(args[1])
     except ValueError:
-        bot.reply(event, "❌ Ungültige Reminder-Nummer. Bitte gib eine Zahl an.")
+        bot.reply(event, "❌ Ungültige Reminder-Nummer. Bitte gib eine Zahl an.", html=True)
         return
     
     room_id = event['room_id']
@@ -199,7 +198,7 @@ def delete_reminder(event, message, bot, args, config):
             break
     
     if not reminder_to_delete:
-        bot.reply(event, f"❌ Reminder #{reminder_id} nicht gefunden oder nicht in diesem Raum vorhanden.")
+        bot.reply(event, f"❌ Reminder #{reminder_id} nicht gefunden oder nicht in diesem Raum vorhanden.", html=True)
         return
     
     # Check if user is the creator or has admin rights
@@ -222,14 +221,14 @@ def delete_reminder(event, message, bot, args, config):
     save_reminders(reminders)
     
     confirmation = f"""
-✅ **Reminder gelöscht!**
+✅ <b>Reminder gelöscht!</b><br><br>
 
-📅 **Wochentag:** {reminder_to_delete['weekday_name']}
-🕐 **Uhrzeit:** {reminder_to_delete['time_str']}
-💬 **Nachricht:** {reminder_to_delete['message']}
+📅 <b>Wochentag:</b> {reminder_to_delete['weekday_name']}<br>
+🕐 <b>Uhrzeit:</b> {reminder_to_delete['time_str']}<br>
+💬 <b>Nachricht:</b> {reminder_to_delete['message']}
 """
     
-    bot.reply(event, confirmation)
+    bot.reply(event, confirmation, html=True)
 
 def check_reminders(bot, config):
     """Check if any reminders should be sent now or were missed recently."""
@@ -297,14 +296,14 @@ def check_reminders(bot, config):
                         if minutes_late > 0:
                             time_info = f" (verzögert um {minutes_late} Min.)"
                     
-                    reminder_message = f"""🔔 **Reminder{time_info}**
+                    reminder_message = f"""🔔 <b>Reminder{time_info}</b><br><br>
 
-{reminder['message']}
+{reminder['message']}<br><br>
 
-*Erstellt von {reminder.get('creator', 'Unbekannt')}*"""
+<i>Erstellt von {reminder.get('creator', 'Unbekannt')}</i>"""
                     
                     try:
-                        room.send_notice(reminder_message)
+                        room.send_html(reminder_message)
                         sent_reminders.add(reminder_key)
                         print(f"Sent reminder {reminder['id']} for {check_time}")
                     except Exception as e:
