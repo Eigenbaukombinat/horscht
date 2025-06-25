@@ -211,22 +211,6 @@ def delete_reminder(event, message, bot, args, config):
         bot.reply(event, f"❌ Reminder #{reminder_id} nicht gefunden oder nicht in diesem Raum vorhanden.", html=True)
         return
     
-    # Check if user is the creator or has admin rights
-    #if reminder_to_delete['creator'] != sender:
-    #    # Allow room admins to delete any reminder (basic check by checking if user has sufficient power level)
-    #    room = bot.client.rooms.get(room_id)
-    #    if room:
-    #        try:
-    #            user_power = room.power_levels.get('users', {}).get(sender, 0)
-    #            default_power = room.power_levels.get('users_default', 0)
-    #            if user_power <= default_power:
-    #                bot.reply(event, f"❌ Du kannst nur deine eigenen Reminder löschen.\nReminder #{reminder_id} wurde von {reminder_to_delete['creator']} erstellt.")
-    #                return
-    #        except:
-    #            bot.reply(event, f"❌ Du kannst nur deine eigenen Reminder löschen.\nReminder #{reminder_id} wurde von {reminder_to_delete['creator']} erstellt.")
-    #            return
-    
-    # Remove the reminder
     reminders = [r for r in reminders if not (r['id'] == reminder_id and r['room_id'] == room_id)]
     save_reminders(reminders)
     
