@@ -132,7 +132,7 @@ def create_reminder(event, message, bot, args, config):
         'weekday_name': weekday_str.capitalize(),
         'hour': hour,
         'minute': minute,
-        'time_str': time_str,
+        'time_str': f'{hour:02d}:{minute:02d}',
         'message': safe_reminder_text,
         'room_id': room_id,
         'room_alias': room_alias,
