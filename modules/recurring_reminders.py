@@ -12,6 +12,7 @@ Time format: HH:MM (24-hour format)
 import datetime
 import json
 import os
+import html
 
 # File to store reminders persistently
 REMINDERS_FILE = "reminders.json"
@@ -115,6 +116,15 @@ def create_reminder(event, message, bot, args, config):
     room_alias = getattr(room, 'canonical_alias', room_id) if room else room_id
     sender = event['sender']
     
+    # Sanitize reminder_text to prevent HTML and JSON injection
+    # 1. Escape HTML to prevent HTML injection in output
+    safe_reminder_text = html.escape(reminder_text)
+    # 2. Remove control characters that could break JSON structure
+    # (e.g., newlines, carriage returns, null bytes, etc.)
+    safe_reminder_text = ''.join(
+        c for c in safe_reminder_text if c >= ' ' and c not in {'\x00', '\x1f', '\x7f'}
+    )
+
     # Create reminder object
     reminder = {
         'id': len(load_reminders()) + 1,
@@ -123,7 +133,7 @@ def create_reminder(event, message, bot, args, config):
         'hour': hour,
         'minute': minute,
         'time_str': time_str,
-        'message': reminder_text,
+        'message': safe_reminder_text,
         'room_id': room_id,
         'room_alias': room_alias,
         'creator': sender,
