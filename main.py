@@ -99,21 +99,56 @@ class Bot(object):
         logging.info("connecting to mqtt server")
         if self.mqtt_broker:
             mqtt_client = mqtt.Client(client_id='horscht')
-            mqtt_client.on_connect = subscribe_to_topics
+            
+            # Set up connection tracking
+            connection_result = {'connected': False, 'error': None}
+            
+            def on_connect_callback(client, userdata, flags, rc):
+                if rc == 0:
+                    connection_result['connected'] = True
+                    subscribe_to_topics(client, userdata, flags, rc)
+                else:
+                    connection_result['error'] = f"Connection failed with code {rc}"
+            
+            def on_disconnect_callback(client, userdata, rc):
+                if rc != 0:
+                    logging.warning(f"MQTT disconnected unexpectedly: {rc}")
+                self.reconnect_mqtt(client, userdata, rc)
+            
+            mqtt_client.on_connect = on_connect_callback
+            mqtt_client.on_disconnect = on_disconnect_callback
+            
             if hasattr(self, 'mqtt_client'):
                 del self.mqtt_client
             self.mqtt_client = mqtt_client
             self.mqtt_client.enable_logger(logger=log)
+            
             try:
                 self.mqtt_client.connect(self.mqtt_broker)
-            except:
-                logging.error('mqtt connect failed.')
-            else:
-                time.sleep(1)
-                self.mqtt_client.on_message = self.mqtt_received
                 self.mqtt_client.loop_start()
-                self.mqtt_client.on_disconnect = self.reconnect_mqtt
+                
+                # Wait up to 10 seconds for connection
+                import time
+                for i in range(5):  # 10 seconds with 2s intervals
+                    if connection_result['connected']:
+                        break
+                    if connection_result['error']:
+                        logging.error(f'MQTT connect failed: {connection_result["error"]}')
+                        return False
+                    time.sleep(2)
+                
+                if not connection_result['connected']:
+                    logging.error('MQTT connect timeout - broker may be unreachable')
+                    return False
+                
+                self.mqtt_client.on_message = self.mqtt_received
                 logging.info('mqtt connected.')
+                return True
+                
+            except Exception as e:
+                logging.error(f'MQTT connect failed: {e}')
+                return False
+        return True  # Return True if no MQTT broker configured (not an error)
 
     def reconnect_mqtt(self, *args, **kw):
         """Will get called when mqtt disconnects."""
@@ -289,7 +324,13 @@ class Bot(object):
         self.client.start_listener_thread(exception_handler=exception_handler)
         
         # connect to mqtt 
-        self.connect_mqtt()
+        if not self.connect_mqtt():
+            print(f"Error: Failed to connect to MQTT broker '{self.mqtt_broker}'")
+            print("Check that:")
+            print("1. The MQTT broker is running and accessible")
+            print("2. The mqtt_broker setting in config.ini is correct")
+            print("3. Network connectivity is working")
+            sys.exit(1)
 
         last_cron = time.time()
         last_mqtt_check = time.time()
@@ -319,11 +360,12 @@ class Bot(object):
             if secs > 65000:
                 secs = 0
 
-            # check connection to mqtt every 5 seconds
-            if now - last_mqtt_check >= 5:
+            # check connection to mqtt every 15 seconds
+            if now - last_mqtt_check >= 15:
                 last_mqtt_check = now
-            if not self.mqtt_client.is_connected():
-                self.connect_mqtt()
+                if hasattr(self, 'mqtt_client') and not self.mqtt_client.is_connected():
+                    logging.warning("MQTT disconnected, attempting to reconnect...")
+                    self.connect_mqtt()
 
             # avoid busy loop
             time.sleep(0.05)
