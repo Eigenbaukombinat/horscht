@@ -90,7 +90,7 @@ def create_reminder(event, message, bot, args, config):
     
     # Validate weekday
     if weekday_str not in WEEKDAY_MAP:
-        bot.reply(event, f"❌ Ungültiger Wochentag: <b>{weekday_str}</b><br>Gültige Wochentage: montag, dienstag, mittwoch, donnerstag, freitag, samstag, sonntag", html=True)
+        bot.reply(event, f"❌ Ungültiger Wochentag!<br>Gültige Wochentage: montag, dienstag, mittwoch, donnerstag, freitag, samstag, sonntag", html=True)
         return
     
     # Validate time format
@@ -106,7 +106,7 @@ def create_reminder(event, message, bot, args, config):
             raise ValueError("Time out of range")
             
     except ValueError:
-        bot.reply(event, f"❌ Ungültiges Uhrzeitformat: <b>{time_str}</b><br>Bitte verwende das Format HH:MM (z.B. 14:30)", html=True)
+        bot.reply(event, f"❌ Ungültiges Uhrzeitformat!<br>Bitte verwende das Format HH:MM (z.B. 14:30)", html=True)
         return
     
     # Get room information
