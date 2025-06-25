@@ -106,14 +106,17 @@ class Bot(object):
             self.mqtt_client.enable_logger(logger=log)
             try:
                 self.mqtt_client.connect(self.mqtt_broker)
-            except:
-                logging.error('mqtt connect failed.')
+            except Exception as e:
+                logging.error(f'MQTT connect failed: {e}')
+                return False
             else:
                 time.sleep(1)
                 self.mqtt_client.on_message = self.mqtt_received
                 self.mqtt_client.loop_start()
                 self.mqtt_client.on_disconnect = self.reconnect_mqtt
                 logging.info('mqtt connected.')
+                return True
+        return True  # Return True if no MQTT broker configured (not an error)
 
     def reconnect_mqtt(self, *args, **kw):
         """Will get called when mqtt disconnects."""
@@ -289,7 +292,13 @@ class Bot(object):
         self.client.start_listener_thread(exception_handler=exception_handler)
         
         # connect to mqtt 
-        self.connect_mqtt()
+        if not self.connect_mqtt():
+            print(f"Error: Failed to connect to MQTT broker '{self.mqtt_broker}'")
+            print("Check that:")
+            print("1. The MQTT broker is running and accessible")
+            print("2. The mqtt_broker setting in config.ini is correct")
+            print("3. Network connectivity is working")
+            sys.exit(1)
 
         last_cron = time.time()
         last_mqtt_check = time.time()
@@ -323,6 +332,7 @@ class Bot(object):
             if now - last_mqtt_check >= 15:
                 last_mqtt_check = now
                 if hasattr(self, 'mqtt_client') and not self.mqtt_client.is_connected():
+                    logging.warning("MQTT disconnected, attempting to reconnect...")
                     self.connect_mqtt()
 
             # avoid busy loop
