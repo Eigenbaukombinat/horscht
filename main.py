@@ -291,10 +291,12 @@ class Bot(object):
         # connect to mqtt 
         self.connect_mqtt()
 
+        last_cron = time.time()
+        last_mqtt_check = time.time()
         secs = 0
-        qsecs = 0
+
         while True:
-            time.sleep(0.25)
+            now = time.time()
 
             # handle any queued events
             while not self.event_queue.empty():
@@ -304,24 +306,27 @@ class Bot(object):
             while not self.invite_queue.empty():
                 room_id, invite_state = self.invite_queue.get_nowait()
                 self.handle_invite(room_id, invite_state)
-            
-            # handle cron-type modules
-            qsecs += 1
-            if qsecs == 4:
-                qsecs = 0
-                secs += 1
+
+            # handle cron-type modules every 1 second
+            if now - last_cron >= 1:
+                secs += int(now - last_cron)
+                last_cron = now
                 for cronsecs, func, module_name in CRON_REGISTRY:
                     if secs % int(cronsecs) == 0:
                         logging.info('Executing cron plugin %s.' % module_name)
-                        func(self, MODULE_CONFIG[module_name]) 
-
-            if (secs % 5) == 0:
-                # check connection to mqtt every 5 seconds
-                if not self.mqtt_client.is_connected():
-                    self.connect_mqtt()
+                        func(self, MODULE_CONFIG[module_name])
 
             if secs > 65000:
                 secs = 0
+
+            # check connection to mqtt every 5 seconds
+            if now - last_mqtt_check >= 5:
+                last_mqtt_check = now
+            if not self.mqtt_client.is_connected():
+                self.connect_mqtt()
+
+            # avoid busy loop
+            time.sleep(0.05)
 
         logging.info("stopping listener thread")
         self.client.stop_listener_thread()
