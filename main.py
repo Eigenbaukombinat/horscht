@@ -375,6 +375,14 @@ def main():
         if module_name == 'bot':
             # ignore general section 
             continue
+        
+        # Check if module parameter is present
+        if 'module' not in config[module_name]:
+            print(f'Error: Section [{module_name}] is missing required "module=" parameter.')
+            print('Every configuration section must specify which module to load.')
+            print('Example: module = modules.helloworld')
+            sys.exit(1)
+            
         module = config[module_name]["module"]
         try:
             mod = importlib.import_module(module)
@@ -397,6 +405,11 @@ def main():
                 MESSAGES_CONFIG[msg] = config[module_name]
             MESSAGES_REGISTRY.update(mod.MSGS)
         if hasattr(mod, 'CRON'):
+            if 'secs' not in config[module_name]:
+                print(f'Error: Section [{module_name}] has a CRON function but is missing required "secs=" parameter.')
+                print('Modules with scheduled tasks must specify the interval in seconds.')
+                print('Example: secs = 60')
+                sys.exit(1)
             CRON_REGISTRY.append((config[module_name]["secs"], mod.CRON, module_name))
 
     COMMANDS.extend(list(COMMAND_REGISTRY.keys()))
