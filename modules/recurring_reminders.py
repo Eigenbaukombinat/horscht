@@ -220,90 +220,76 @@ def delete_reminder(event, message, bot, args, config):
     bot.reply(event, confirmation, html=True)
 
 def check_reminders(bot, config):
-    """Check if any reminders should be sent now or were missed recently."""
+    """Check if any reminders should be sent now."""
     
     now = datetime.datetime.now()
+    current_minute = now.replace(second=0, microsecond=0)
     
-    # Load reminders and last check time
+    # Load reminders
     reminders = load_reminders()
-    last_check_file = "last_reminder_check.txt"
     
-    # Get last check time
-    last_check = None
-    if os.path.exists(last_check_file):
+    # File to track sent reminders to prevent duplicates
+    sent_file = "sent_reminders_today.json"
+    today_str = now.strftime('%Y-%m-%d')
+    
+    # Load today's sent reminders
+    sent_today = {}
+    if os.path.exists(sent_file):
         try:
-            with open(last_check_file, 'r') as f:
-                last_check_str = f.read().strip()
-                if last_check_str:
-                    last_check = datetime.datetime.fromisoformat(last_check_str)
-        except (ValueError, IOError):
+            with open(sent_file, 'r') as f:
+                data = json.load(f)
+                # Only keep today's data, clean up old entries
+                if data.get('date') == today_str:
+                    sent_today = data.get('sent', {})
+        except (json.JSONDecodeError, IOError):
             pass
     
-    # If no last check or more than 10 minutes ago, check for missed reminders
-    if last_check is None:
-        last_check = now - datetime.timedelta(minutes=5)  # Check last 5 minutes on first run
+    current_weekday = current_minute.weekday()
+    current_hour = current_minute.hour
+    current_minute_val = current_minute.minute
     
-    # Create a list of time points to check (from last check to now)
-    check_times = []
-    current_check = last_check.replace(second=0, microsecond=0)
-    end_time = now.replace(second=0, microsecond=0)
+    newly_sent = []
     
-    while current_check <= end_time:
-        check_times.append(current_check)
-        current_check += datetime.timedelta(minutes=1)
-    
-    # Track which reminders we've already sent to avoid duplicates
-    sent_reminders = set()
-    
-    for check_time in check_times:
-        check_weekday = check_time.weekday()
-        check_hour = check_time.hour
-        check_minute = check_time.minute
-        
-        for reminder in reminders:
-            # Create a unique identifier for this reminder at this time
-            reminder_key = f"{reminder['id']}_{check_time.strftime('%Y%m%d_%H%M')}"
+    for reminder in reminders:
+        # Check if this reminder should fire right now
+        if (reminder['weekday'] == current_weekday and 
+            reminder['hour'] == current_hour and 
+            reminder['minute'] == current_minute_val):
             
-            # Skip if we already sent this reminder
-            if reminder_key in sent_reminders:
+            # Create unique key for this reminder today
+            reminder_key = f"{reminder['id']}_{current_minute.strftime('%H:%M')}"
+            
+            # Skip if already sent today at this time
+            if reminder_key in sent_today:
                 continue
             
-            # Check if this reminder should fire at this time
-            if (reminder['weekday'] == check_weekday and 
-                reminder['hour'] == check_hour and 
-                reminder['minute'] == check_minute):
+            # Send the reminder to the appropriate room
+            room_id = reminder['room_id']
+            if room_id in bot.client.rooms:
+                room = bot.client.rooms[room_id]
                 
-                # Send the reminder to the appropriate room
-                room_id = reminder['room_id']
-                if room_id in bot.client.rooms:
-                    room = bot.client.rooms[room_id]
-                    
-                    # Add timestamp if this is a catch-up reminder
-                    time_info = ""
-                    if check_time < now.replace(second=0, microsecond=0):
-                        minutes_late = int((now - check_time).total_seconds() / 60)
-                        if minutes_late > 0:
-                            time_info = f" (verzögert um {minutes_late} Min.)"
-                    
-                    reminder_message = f"""🔔 <b>Reminder{time_info}</b><br><br>
+                reminder_message = f"""🔔 <b>Reminder</b><br><br>
 
-{reminder['message']}<br><br>
-
-<i>Erstellt von {reminder.get('creator', 'Unbekannt')}</i>"""
-                    
-                    try:
-                        room.send_html(reminder_message)
-                        sent_reminders.add(reminder_key)
-                        print(f"Sent reminder {reminder['id']} for {check_time}")
-                    except Exception as e:
-                        print(f"Error sending reminder to room {room_id}: {e}")
+{reminder['message']}"""
+                
+                try:
+                    room.send_html(reminder_message)
+                    sent_today[reminder_key] = current_minute.isoformat()
+                    newly_sent.append(reminder['id'])
+                    print(f"Sent reminder {reminder['id']} at {current_minute}")
+                except Exception as e:
+                    print(f"Error sending reminder to room {room_id}: {e}")
     
-    # Save current time as last check
-    try:
-        with open(last_check_file, 'w') as f:
-            f.write(now.isoformat())
-    except IOError:
-        print(f"Warning: Could not save last check time to {last_check_file}")
+    # Save updated sent reminders if any were sent
+    if newly_sent:
+        try:
+            with open(sent_file, 'w') as f:
+                json.dump({
+                    'date': today_str,
+                    'sent': sent_today
+                }, f, indent=2)
+        except IOError:
+            print(f"Warning: Could not save sent reminders to {sent_file}")
 
 # Register the commands and scheduled task
 CMDS = {

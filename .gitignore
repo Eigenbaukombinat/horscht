@@ -11,3 +11,4 @@ config.ini
 pip-selfcheck.json
 reminders.json
 last_reminder_check.txt
+sent_reminders_today.json
