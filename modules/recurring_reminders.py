@@ -114,7 +114,6 @@ def create_reminder(event, message, bot, args, config):
     room_id = event['room_id']
     room = bot.client.rooms.get(room_id)
     room_alias = getattr(room, 'canonical_alias', room_id) if room else room_id
-    sender = event['sender']
     
     # Sanitize reminder_text to prevent HTML and JSON injection
     # 1. Escape HTML to prevent HTML injection in output
@@ -136,7 +135,6 @@ def create_reminder(event, message, bot, args, config):
         'message': safe_reminder_text,
         'room_id': room_id,
         'room_alias': room_alias,
-        'creator': sender,
         'created_at': datetime.datetime.now().isoformat()
     }
     
@@ -152,7 +150,6 @@ def create_reminder(event, message, bot, args, config):
 📅 <b>Wochentag:</b> {reminder['weekday_name']}<br>
 🕐 <b>Uhrzeit:</b> {reminder['time_str']}<br>
 💬 <b>Nachricht:</b> {reminder['message']}<br>
-👤 <b>Erstellt von:</b> {sender}<br><br>
 
 Der Reminder wird jeden {reminder['weekday_name']} um {reminder['time_str']} in diesem Raum gesendet.
 """
@@ -177,7 +174,6 @@ def list_reminders(event, message, bot, args, config):
     for reminder in room_reminders:
         reminder_list += f"<b>#{reminder['id']}</b> - {reminder['weekday_name']} um {reminder['time_str']}<br>"
         reminder_list += f"💬 {reminder['message']}<br>"
-        reminder_list += f"👤 Erstellt von: {reminder['creator']}<br><br>"
     
     reminder_list += "<b>Tipp:</b> Verwende <code>!reminder delete &lt;nummer&gt;</code> um einen Reminder zu löschen."
     
@@ -197,7 +193,6 @@ def delete_reminder(event, message, bot, args, config):
         return
     
     room_id = event['room_id']
-    sender = event['sender']
     reminders = load_reminders()
     
     # Find the reminder to delete
