@@ -319,11 +319,11 @@ class Bot(object):
             if secs > 65000:
                 secs = 0
 
-            # check connection to mqtt every 5 seconds
-            if now - last_mqtt_check >= 5:
+            # check connection to mqtt every 15 seconds
+            if now - last_mqtt_check >= 15:
                 last_mqtt_check = now
-            if not self.mqtt_client.is_connected():
-                self.connect_mqtt()
+                if hasattr(self, 'mqtt_client') and not self.mqtt_client.is_connected():
+                    self.connect_mqtt()
 
             # avoid busy loop
             time.sleep(0.05)
